@@ -282,18 +282,25 @@
     isPlaying = state;
   }
 
+// Improved scrolling logic to keep the active word centered
   function handleTimeUpdate(e) {
     currentTime = e.target.currentTime;
     duration = e.target.duration;
     
     if (isPlaying) {
       const container = document.getElementById('highlight-container');
-      if (container) {
-        const progress = currentTime / duration;
-        container.scrollTop = (container.scrollHeight * progress) - (container.clientHeight / 2);
+      const activeWord = container?.querySelector('.word-active');
+      
+      if (activeWord) {
+        // This scrolls specifically to the active word rather than a percentage
+        activeWord.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
       }
     }
   }
+
 
   // Reactive words for the highlight view
   $: words = editableTranscript.split(' ');
@@ -305,10 +312,13 @@ $: highlightWords = editableTranscript
   .split(/\s+/)
   .filter(word => word.length > 0);
 
+  // Adjust this value (0.5 to 1.2) to find your perfect "snappiness"
+  const lookAheadOffset = 0.12;
+
 // 2. IMPORTANT: Calculate index based on the CLEANED list length
 $: currentWordIndex = duration > 0 
-  ? Math.floor((currentTime / duration) * highlightWords.length) 
-  : 0;
+    ? Math.floor(((currentTime + lookAheadOffset) / duration) * highlightWords.length) 
+    : 0;
 
 </script>
 
@@ -418,7 +428,7 @@ $: currentWordIndex = duration > 0
 
         <div class="transcript-container position-relative">
           {#if isPlaying}
-            <div id="highlight-container" class="form-control custom-input transcript-area highlight-mode">
+          <div id="highlight-container" class="form-control custom-input transcript-area highlight-mode">
               <div class="focus-badge">Focus Mode: Listening</div>
               {#each highlightWords as word, i}
                 <span class={i === currentWordIndex ? 'word-active' : 'word-idle'}>
@@ -770,16 +780,19 @@ $: currentWordIndex = duration > 0
 }
 
 .word-idle {
-  color: rgba(255, 255, 255, 0.3);
-  transition: color 0.2s;
+  color: rgba(255, 255, 255, 0.25);
+  transition: none; /* Removed transition for instant response */
 }
 
 .word-active {
-  color: var(--indigo-primary);
-  background: rgba(99, 102, 241, 0.15);
+  color: #fff !important;
+  background: var(--indigo-primary);
   border-radius: 4px;
   font-weight: bold;
-  text-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+  padding: 0 4px;
+  /* Add a glow that expands slightly to catch the eye faster */
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.6);
+  transition: none; 
 }
 
 /* Smooth scrolling for the highlight container */
@@ -803,8 +816,8 @@ $: currentWordIndex = duration > 0
 /* Improvement for the Focus Badge */
 .focus-badge {
   position: absolute;
-  top: 10px;
-  right: 15px;
+  top: 0px;
+  right: 0px;
   background: rgba(99, 102, 241, 0.2);
   color: var(--indigo-primary);
   font-size: 0.65rem;
