@@ -274,6 +274,42 @@
     tempSpeakerName = "";
   }
 
+  let isPlaying = false;
+  let currentTime = 0;
+  let duration = 0;
+
+  function handlePlayState(state) {
+    isPlaying = state;
+  }
+
+  function handleTimeUpdate(e) {
+    currentTime = e.target.currentTime;
+    duration = e.target.duration;
+    
+    if (isPlaying) {
+      const container = document.getElementById('highlight-container');
+      if (container) {
+        const progress = currentTime / duration;
+        container.scrollTop = (container.scrollHeight * progress) - (container.clientHeight / 2);
+      }
+    }
+  }
+
+  // Reactive words for the highlight view
+  $: words = editableTranscript.split(' ');
+// --- FIND THESE LINES AND UPDATE THEM ---
+
+// 1. Ensure we only use the cleaned list for the highlight view
+$: highlightWords = editableTranscript
+  .replace(/Speaker\s+[^\n:]+[:]?/g, '') // Removes "Speaker Name:"
+  .split(/\s+/)
+  .filter(word => word.length > 0);
+
+// 2. IMPORTANT: Calculate index based on the CLEANED list length
+$: currentWordIndex = duration > 0 
+  ? Math.floor((currentTime / duration) * highlightWords.length) 
+  : 0;
+
 </script>
 
 <div class="upload-page-wrapper">
@@ -333,7 +369,14 @@
                   <div class="player-label d-none d-md-flex mb-0">
                     <i class="fa-solid fa-waveform-lines me-2"></i> Recording
                   </div>
-                  <audio controls class="custom-audio-player flex-grow-1" src={audioUrl}></audio>
+                  <audio 
+                    controls 
+                    class="custom-audio-player flex-grow-1" 
+                    src={audioUrl}
+                    on:play={() => handlePlayState(true)}
+                    on:pause={() => handlePlayState(false)}
+                    on:timeupdate={handleTimeUpdate}
+                  ></audio>
                 </div>
               </div>
             </div>
@@ -359,7 +402,7 @@
             </div>
 
             {#if speakerIds.length}
-              <div class="mb-3 d-flex flex-wrap gap-2">
+              <div class="mb-3 d-flex flex-wrap gap-2 speaker-chips-container {isPlaying ? 'hide-speakers' : ''}">
                 {#each speakerIds as id}
                   <button 
                     class="btn speaker-chip" 
@@ -373,14 +416,27 @@
               </div>
             {/if}
 
+        <div class="transcript-container position-relative">
+          {#if isPlaying}
+            <div id="highlight-container" class="form-control custom-input transcript-area highlight-mode">
+              <div class="focus-badge">Focus Mode: Listening</div>
+              {#each highlightWords as word, i}
+                <span class={i === currentWordIndex ? 'word-active' : 'word-idle'}>
+                  {word}{' '}
+                </span>
+              {/each}
+            </div>
+          {:else}
             <textarea
-              class="form-control custom-input small transcript-area"
+              class="form-control custom-input transcript-area"
               rows="28"
               spellcheck="false"
-              value={editableTranscript}
+              bind:value={editableTranscript}
               on:input={handleTranscriptEdit}
               placeholder="Transcription will appear here..."
             ></textarea>
+          {/if}
+        </div>
 
           </div>
         </div>
@@ -698,6 +754,67 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+.transcript-area {
+  height: 600px;
+  overflow-y: auto;
+  transition: all 0.3s ease;
+}
+
+/* Karaoke Highlight Styles */
+.highlight-mode {
+  background: rgba(10, 12, 20, 0.95) !important;
+  line-height: 2;
+  font-size: 1.1rem;
+  padding: 20px;
+  white-space: pre-wrap;
+}
+
+.word-idle {
+  color: rgba(255, 255, 255, 0.3);
+  transition: color 0.2s;
+}
+
+.word-active {
+  color: var(--indigo-primary);
+  background: rgba(99, 102, 241, 0.15);
+  border-radius: 4px;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+}
+
+/* Smooth scrolling for the highlight container */
+#highlight-container {
+  scroll-behavior: smooth;
+}
+
+/* Add this to your CSS */
+.speaker-chips-container {
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.hide-speakers {
+  opacity: 0;
+  visibility: hidden;
+  height: 0;
+  margin-bottom: 0 !important;
+  overflow: hidden;
+}
+
+/* Improvement for the Focus Badge */
+.focus-badge {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--indigo-primary);
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--indigo-primary);
+  text-transform: uppercase;
+  z-index: 5;
+}
 
 
   /* TONE SPECIFIC */
