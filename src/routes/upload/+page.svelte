@@ -11,6 +11,7 @@
     speakerMapStore 
   } from '$lib/store.js';
   import { onMount } from 'svelte';
+  import AudioUploader from './AudioUploader.svelte';
 
 
   /* Script logic remains untouched as requested */
@@ -338,21 +339,23 @@ function saveSpeakerName() {
 
 // 1. Ensure we only use the cleaned list for the highlight view
 $: highlightWords = editableTranscript
-  .replace(/Speaker\s+[^\n:]+[:]?/g, '') // Removes "Speaker Name:"
-  .split(/\s+/)
-  .filter(word => word.length > 0);
+.replace(/Speaker\s+[^\n:]+[:]?/g, '') // Removes "Speaker Name:"
+.split(/\s+/)
+.filter(word => word.length > 0);
 
-  // Adjust this value (0.5 to 1.2) to find your perfect "snappiness"
-  const lookAheadOffset = 0.12;
+// Adjust this value (0.5 to 1.2) to find your perfect "snappiness"
+const lookAheadOffset = 0.12;
 
 // 2. IMPORTANT: Calculate index based on the CLEANED list length
 $: currentWordIndex = duration > 0 
-    ? Math.floor(((currentTime + lookAheadOffset) / duration) * highlightWords.length) 
-    : 0;
+? Math.floor(((currentTime + lookAheadOffset) / duration) * highlightWords.length) 
+: 0;
 
-  function clearSession() {
+  let uploaderComponent;
+  function  clearSession() {
     if (confirm("This will permanently delete the current transcript and all AI insights. Continue?")) {
       // Reset local variables
+      uploaderComponent.clearFile();
       transcript = "";
       summary = "";
       meetingType = "";
@@ -369,6 +372,19 @@ $: currentWordIndex = duration > 0
       
       // The reactive $: statements will automatically update the stores to ""
     }
+  }
+
+
+  function handleNewFile(event) {
+    // These come from the 'dispatch' in the child component
+    file = event.detail.file;
+    audioUrl = event.detail.url;
+    error = "";
+  }
+
+  function handleClear() {
+    file = null;
+    audioUrl = "";
   }
 
 </script>
@@ -390,14 +406,22 @@ $: currentWordIndex = duration > 0
             <label class="form-label small text-light-muted">
               <i class="fa-solid fa-file-audio me-1"></i> Audio file
             </label>
-            <div class="file-input-container">
+            <AudioUploader 
+            bind:this={uploaderComponent}
+              on:fileSelected={handleNewFile} 
+              on:fileCleared={handleClear}
+              on:error={(e) => error = e.detail}
+            />
+            <!-- <div class="file-input-container">
                 <input type="file" accept="audio/*" id="audio-input" class="d-none" on:change={handleFileChange} />
                 <label for="audio-input" class="btn btn-indigo-glow w-100 py-2 d-flex align-items-center justify-content-center">
                     <i class="fa-solid fa-cloud-arrow-up me-2"></i>
                     {file ? file.name.substring(0, 15) + '...' : "Choose Audio"}
                 </label>
-            </div>
+            </div> -->
           </div>
+
+
 
           <div class="col-md-4">
             <label class="form-label small text-light-muted">
