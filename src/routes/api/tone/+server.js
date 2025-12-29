@@ -82,6 +82,7 @@ export async function POST({ request }) {
     // 4. Parse and Return
     // Vertex with responseMimeType returns a clean string, but we parse to send as JSON object
     const toneResult = JSON.parse(rawText);
+    console.log("[TONE RESULT]", toneResult);
     return json(toneResult);
 
   } catch (err) {

@@ -39,7 +39,33 @@ export async function POST({ request }) {
     // Note: We use the 'v1' endpoint which is stable for 2025
     const endpoint = `https://${REGION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${REGION}/publishers/google/models/${MODEL_ID}:generateContent`;
 
-    const prompt = `Summarize this ${meetingType || 'meeting'}. Focus on the main points. \n\nTranscript:\n${transcript}`;
+    const prompt = `
+    
+    You are an AI that generates meeting summaries for a professional ${meetingType} analysis product.
+
+STRICT RULES (must be followed):
+- Output PLAIN TEXT only
+- Do NOT use markdown
+- Do NOT use bold, italics, headings, or lists
+- Do NOT use bullet points or numbering
+- Do NOT use symbols such as *, _, #, -, >, or backticks
+- Do NOT add extra line breaks
+- Write a single clear paragraph only
+
+STYLE GUIDELINES:
+- Use clear, simple, professional language
+- Assume the reader is a busy non-technical stakeholder
+- Avoid jargon and complex sentences
+- Be concise and accurate
+
+TASK:
+Summarize the following ${meetingType || "meeting"} by capturing the main discussion points, decisions, and outcomes.
+
+Transcript:
+${transcript}
+
+Before responding, double-check that the output follows all rules above. If not, rewrite it as plain text.
+`;
 
     // 3. The API Request
     const res = await fetch(endpoint, {

@@ -12,6 +12,7 @@
   } from '$lib/store.js';
   import { onMount } from 'svelte';
   import AudioUploader from './AudioUploader.svelte';
+  import ToneAnalysis from './ToneAnalysis.svelte';
 
 
   /* Script logic remains untouched as requested */
@@ -554,7 +555,7 @@ $: currentWordIndex = duration > 0
             </div>
         </div>
 
-        <div class="card glass-card mb-3">
+        <!-- <div class="card glass-card mb-3">
           <div class="card-body p-4">
             <h5 class="text-white fw-bold mb-3">
               <i class="fa-solid fa-ear-listen me-2 text-indigo"></i>
@@ -588,8 +589,15 @@ $: currentWordIndex = duration > 0
               </button>
             {/if}
           </div>
-        </div>
+        </div> -->
 
+        <ToneAnalysis 
+          {transcript} 
+          {toneResult} 
+          {toneLoading} 
+          {analyzeTone}
+        />
+        
         <div class="card glass-card mb-3">
           <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
