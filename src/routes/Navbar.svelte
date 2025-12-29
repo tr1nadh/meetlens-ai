@@ -31,13 +31,13 @@
     <div class="collapse navbar-collapse" id="navbarContent">
       <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-lg-3">
         <li class="nav-item">
-          <a class="nav-link" href="#features" on:click={(e) => scrollToSection(e, 'features')}>Features</a>
+          <a class="nav-link" href="/#features" on:click={(e) => scrollToSection(e, 'features')}>Features</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#how" on:click={(e) => scrollToSection(e, 'how')}>How it Works</a>
+          <a class="nav-link" href="/#how" on:click={(e) => scrollToSection(e, 'how')}>How it Works</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#pricing" on:click={(e) => scrollToSection(e, 'pricing')}>Pricing</a>
+          <a class="nav-link" href="/#pricing" on:click={(e) => scrollToSection(e, 'pricing')}>Pricing</a>
         </li>
       </ul>
       
