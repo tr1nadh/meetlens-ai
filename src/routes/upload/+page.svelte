@@ -394,11 +394,11 @@ $: currentWordIndex = duration > 0
   <div class="container py-5">
     <div class="card glass-card mb-4 mt-5">
       <div class="card-body p-4">
-        <h4 class="mb-1 text-white fw-bold">
+        <!-- <h4 class="mb-1 text-white fw-bold">
           <i class="fa-solid fa-microphone-lines me-2 text-indigo"></i>
           MeetLens
-        </h4>
-        <p class="text-light-muted mb-4">
+        </h4> -->
+        <p class="text-light-muted fs-6 fw-semibold mb-4">
           Upload audio <span class="text-primary">(WAV, MP3, M4A | MAX 30min)</span>,
            choose its type, and generate a clean transcript with AI insights.
         </p>
