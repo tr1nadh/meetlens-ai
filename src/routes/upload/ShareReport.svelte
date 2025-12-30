@@ -4,38 +4,44 @@
   let html2canvas;
   let jsPDF;
   let isExporting = false;
+  let exportType = ''; // 'pdf' or 'png'
 
   onMount(async () => {
-    // Dynamic imports to prevent SSR issues
     const h2cModule = await import('html2canvas');
     const jspdfModule = await import('jspdf');
     html2canvas = h2cModule.default;
     jsPDF = jspdfModule.default;
   });
 
-  async function downloadPDF() {
+  // Reusable helper to capture the dashboard without the modal
+  async function captureDashboard() {
     const element = document.getElementById('analysis-dashboard');
     const modalElement = document.getElementById('shareModal');
     
-    if (!element || !html2canvas || !jsPDF) return;
+    if (!element || !html2canvas) return null;
 
+    // Hide modal and backdrop from capture
+    modalElement.setAttribute('data-html2canvas-ignore', 'true');
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(b => b.setAttribute('data-html2canvas-ignore', 'true'));
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#0e111d', 
+      logging: false,
+    });
+
+    modalElement.removeAttribute('data-html2canvas-ignore');
+    return canvas;
+  }
+
+  async function downloadPDF() {
     isExporting = true;
-
+    exportType = 'pdf';
     try {
-      // 1. Hide modal and backdrop from the capture engine manually
-      // We don't use display:none because that might stop animations
-      // We use a custom attribute that html2canvas recognizes to ignore elements
-      modalElement.setAttribute('data-html2canvas-ignore', 'true');
-      const backdrops = document.querySelectorAll('.modal-backdrop');
-      backdrops.forEach(b => b.setAttribute('data-html2canvas-ignore', 'true'));
-
-      // 2. Capture the clean dashboard underneath
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#0e111d', 
-        logging: false,
-      });
+      const canvas = await captureDashboard();
+      if (!canvas || !jsPDF) return;
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
@@ -49,9 +55,28 @@
     } catch (err) {
       console.error('PDF Export Error:', err);
     } finally {
-      // 3. Clean up attributes (though not strictly necessary as they are ignored by capture)
-      modalElement.removeAttribute('data-html2canvas-ignore');
       isExporting = false;
+      exportType = '';
+    }
+  }
+
+  async function downloadPNG() {
+    isExporting = true;
+    exportType = 'png';
+    try {
+      const canvas = await captureDashboard();
+      if (!canvas) return;
+
+      // Create a virtual link to trigger download
+      const link = document.createElement('a');
+      link.download = `Meeting_Analysis_${new Date().toISOString().slice(0, 10)}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error('PNG Export Error:', err);
+    } finally {
+      isExporting = false;
+      exportType = '';
     }
   }
 </script>
@@ -80,14 +105,20 @@
               disabled={isExporting}
             >
               <span>
-                <i class="fa-solid {isExporting ? 'fa-spinner fa-spin' : 'fa-file-pdf'} me-2 text-danger"></i> 
-                {isExporting ? 'Generating...' : 'Download as PDF'}
+                <i class="fa-solid {exportType === 'pdf' ? 'fa-spinner fa-spin' : 'fa-file-pdf'} me-2 text-danger"></i> 
+                {exportType === 'pdf' ? 'Generating PDF...' : 'Download as PDF'}
               </span>
             </button>
             
-            <button class="btn btn-outline-glass d-flex justify-content-between align-items-center py-2 px-3 disabled-feature">
-              <span><i class="fa-solid fa-image me-2 text-purple"></i> Download as PNG</span>
-              <span class="badge-soon">SOON</span>
+            <button 
+              class="btn btn-outline-glass d-flex justify-content-between align-items-center py-2 px-3"
+              on:click={downloadPNG}
+              disabled={isExporting}
+            >
+              <span>
+                <i class="fa-solid {exportType === 'png' ? 'fa-spinner fa-spin' : 'fa-image'} me-2 text-purple"></i> 
+                {exportType === 'png' ? 'Generating Image...' : 'Download as PNG'}
+              </span>
             </button>
           </div>
         </div>
@@ -131,15 +162,7 @@
   .x-small { font-size: 0.7rem; }
   .uppercase-tracking { text-transform: uppercase; letter-spacing: 1px; }
   .disabled-feature { cursor: not-allowed !important; opacity: 0.6; filter: grayscale(0.5); }
-  .badge-soon {
-    font-size: 0.6rem;
-    background: rgba(168, 85, 247, 0.15);
-    color: #a855f7;
-    border: 1px solid rgba(168, 85, 247, 0.4);
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-weight: 800;
-  }
+  
   .form-control-custom {
     background: rgba(255, 255, 255, 0.05) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -148,7 +171,6 @@
     border-bottom-left-radius: 12px !important;
     padding: 10px 15px;
   }
-  .form-control-custom::placeholder { color: rgba(255, 255, 255, 0.3); }
   .form-control-custom:focus {
     border-color: #6366f1 !important;
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
