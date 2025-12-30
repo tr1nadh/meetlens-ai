@@ -21,7 +21,6 @@ export async function POST({ request }) {
       );
     }
 
-    // ✅ SAME model, SAME endpoint
     const endpoint = `https://${REGION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${REGION}/publishers/google/models/gemini-2.0-flash-lite:generateContent`;
 
     const meetingContext = meetingType
@@ -29,28 +28,39 @@ export async function POST({ request }) {
       : "General meeting";
 
     const prompt = `
-You are an AI assistant extracting key decisions from a ${meetingContext}.
+You are a high-precision analyst. Your task is to identify and extract "Key Decisions" from this ${meetingContext} transcript.
 
-Definition:
-A key decision is a confirmed agreement, approval, rejection, or commitment made during the conversation.
-Key decisions describe what was decided, not what needs to be done.
+A Key Decision is a confirmed agreement, approval, rejection, or definitive choice made during the conversation. 
 
 Rules:
-- Extract ONLY finalized or clearly agreed-upon decisions
-- Do NOT include action items or tasks
-- Do NOT summarize the ${meetingContext}
-- Do NOT invent decisions
-- Decisions must be directly supported by the conversation
-- If a decision maker is mentioned, include it
-- Output as a bullet list
-- If no clear decisions exist, say: "No key decisions identified."
-- Exclude opinions, suggestions, or discussions that did not result in a decision
+- Extract ONLY finalized or clearly agreed-upon decisions.
+- Do NOT include action items (tasks/next steps).
+- Do NOT include opinions or suggestions unless they were formally accepted.
+- Assign a confidence score (0.0 to 1.0) and a confidence level ("High", "Medium", "Low") based on how clear the agreement was.
+- List specific segments from the transcript as "evidence" for each decision.
+
+Return ONLY a valid JSON object following this exact structure:
+{
+  "keyDecisions": [
+    {
+      "id": "kd_1",
+      "decision": "string",
+      "decisionMaker": "string or 'Consensus'",
+      "confidence": number,
+      "confidenceLevel": "string",
+      "context": "string",
+      "evidence": ["string"]
+    }
+  ],
+  "meta": {
+    "totalDecisions": number,
+    "generatedAt": "ISO-8601-timestamp"
+  }
+}
 
 Transcript:
 ${transcript}
     `.trim();
-
-    console.log("[LOG] Key Decisions Prompt:", prompt);
 
     const res = await fetch(endpoint, {
       method: "POST",
@@ -66,8 +76,11 @@ ${transcript}
           }
         ],
         generationConfig: {
-          temperature: 0.2,
-          maxOutputTokens: 300
+          temperature: 0,        // Max consistency
+          topP: 1,               // Strict logic
+          topK: 1,               // Strict logic
+          maxOutputTokens: 1500, // Sufficient space for context and evidence
+          response_mime_type: "application/json" // Force JSON output
         }
       })
     });
@@ -78,15 +91,22 @@ ${transcript}
     }
 
     const data = await res.json();
+    const rawResponse = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
-    const keyDecisions =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
-    if (!keyDecisions) {
+    if (!rawResponse) {
       throw new Error("Failed to generate key decisions");
     }
 
-    return json({ keyDecisions });
+    // Parse the JSON string from AI into a real object
+    const parsedData = JSON.parse(rawResponse);
+
+    console.log("[KEY DECISIONS RESULT]", parsedData);
+
+    // Return the keyDecisions array and meta as expected by the UI
+    return json({ 
+        keyDecisions: parsedData.keyDecisions,
+        meta: parsedData.meta 
+    });
 
   } catch (err) {
     console.error("[KEY DECISIONS ERROR]", err);

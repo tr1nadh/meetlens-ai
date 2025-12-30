@@ -15,6 +15,7 @@
   import ToneAnalysis from './ToneAnalysis.svelte';
   import ShareReport from './ShareReport.svelte';
   import ActionItemsAnalysis from './ActionItemsAnalysis.svelte';
+  import DecisionAnalysis from './DecisionAnalysis.svelte';
 
 
   /* Script logic remains untouched as requested */
@@ -581,22 +582,13 @@ $: currentWordIndex = duration > 0
             {/if}
           </div>
         </div>
-
-        <div class="card glass-card mb-3">
-          <div class="card-body p-4">
-            <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-gavel me-2 text-indigo"></i> Key Decisions</h5>
-            {#if keyDecisionsLoading}
-              <div class="text-light-muted small mb-3">Extracting decisions...</div>
-            {:else if keyDecisions}
-              <div class="result-box small mb-3">{keyDecisions}</div>
-              <button class="btn btn-outline-indigo w-100" on:click={generateKeyDecisions}>
-                <i class="fa-solid fa-rotate-right me-1"></i> Re-extract Decisions
-              </button>
-            {:else}
-              <button class="btn btn-outline-indigo w-100" disabled={!transcript.trim()} on:click={generateKeyDecisions}>Get Key Decisions</button>
-            {/if}
-          </div>
-        </div>
+        
+        <DecisionAnalysis
+          {transcript}
+          {keyDecisions}
+          {keyDecisionsLoading}
+          {generateKeyDecisions}
+        />
 
         <ActionItemsAnalysis
           {transcript}
