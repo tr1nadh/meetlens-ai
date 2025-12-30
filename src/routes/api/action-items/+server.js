@@ -21,7 +21,6 @@ export async function POST({ request }) {
       );
     }
 
-    // ✅ SAME model, SAME endpoint
     const endpoint = `https://${REGION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${REGION}/publishers/google/models/gemini-2.0-flash-lite:generateContent`;
 
     const meetingContext = meetingType
@@ -29,28 +28,39 @@ export async function POST({ request }) {
       : "General meeting";
 
     const prompt = `
-You are an AI assistant extracting action items from a ${meetingContext}.
+You are a high-precision analyst. Your goal is to identify and extract every action item from the following ${meetingContext} transcript.
 
-Definition:
-An action item is a concrete next step that must be executed as a result of the conversation.
+### Extraction Criteria:
+1. **Explicit Actions:** Direct requests or promises (e.g., "I will send the file").
+2. **Implied Actions:** Captured when a participant agrees to a suggestion or acknowledges a responsibility (e.g., "That makes sense, I'm on it").
+3. **Follow-ups:** Any mention of a future meeting or status check.
 
-Rules:
-- Extract explicit OR strongly implied action items that result from the conversation
-- Each item must be actionable
-- Do NOT summarize the ${meetingContext}
-- Do NOT invent actions that are not directly supported by the conversation
-- If an owner is mentioned, include it
-- If a deadline is mentioned, include it
-- Output as a bullet list
-- If no action items exist, say: "No clear action items identified."
-- If the responsible party is implied (e.g., agent or customer), infer it based on role
-- Exclude conversational acknowledgements, agreements, or opinions unless they result in an executable step
+### Data Requirements for each item:
+- **task:** A clear, standalone description of what needs to be done.
+- **owner:** The specific name or role (Agent, Customer, etc.) responsible.
+- **deadline:** The specific date, time, or relative timeframe mentioned; otherwise null.
+- **reasoning:** A 1-sentence explanation of why this is an action item (e.g., "The customer agreed to provide bank statements by Friday").
+
+### JSON Output Format:
+{
+  "actionItems": [
+    {
+      "task": "string",
+      "owner": "string",
+      "deadline": "string or null",
+      "reasoning": "string"
+    }
+  ]
+}
+
+### Constraints:
+- Be exhaustive: do not miss any commitments.
+- Be precise: exclude general conversation that doesn't require a next step.
+- Return an empty array if absolutely no tasks are found.
 
 Transcript:
 ${transcript}
     `.trim();
-
-    console.log("[LOG] Action Items Prompt:", prompt);
 
     const res = await fetch(endpoint, {
       method: "POST",
@@ -66,8 +76,11 @@ ${transcript}
           }
         ],
         generationConfig: {
-          temperature: 0.2,
-          maxOutputTokens: 300
+          temperature: 0,      // Deterministic: No randomness
+          topP: 1,             // Strict probability matching
+          topK: 1,             // Highest confidence token selection
+          maxOutputTokens: 1200, 
+          response_mime_type: "application/json"
         }
       })
     });
@@ -78,15 +91,15 @@ ${transcript}
     }
 
     const data = await res.json();
+    const rawResponse = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
-    const actionItems =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
-    if (!actionItems) {
+    if (!rawResponse) {
       throw new Error("Failed to generate action items");
     }
 
-    return json({ actionItems });
+    const parsedData = JSON.parse(rawResponse);
+
+    return json({ actionItems: parsedData.actionItems });
 
   } catch (err) {
     console.error("[ACTION ITEMS ERROR]", err);

@@ -14,6 +14,7 @@
   import AudioUploader from './AudioUploader.svelte';
   import ToneAnalysis from './ToneAnalysis.svelte';
   import ShareReport from './ShareReport.svelte';
+  import ActionItemsAnalysis from './ActionItemsAnalysis.svelte';
 
 
   /* Script logic remains untouched as requested */
@@ -597,21 +598,12 @@ $: currentWordIndex = duration > 0
           </div>
         </div>
 
-        <div class="card glass-card">
-          <div class="card-body p-4">
-            <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-list-check me-2 text-emerald"></i> Action Items</h5>
-            {#if actionItemsLoading}
-              <div class="text-light-muted small mb-3">Extracting items...</div>
-            {:else if actionItems}
-              <div class="result-box small mb-3">{actionItems}</div>
-              <button class="btn btn-outline-emerald w-100" on:click={generateActionItems}>
-                <i class="fa-solid fa-rotate-right me-1"></i> Re-extract Items
-              </button>
-            {:else}
-              <button class="btn btn-emerald-glow w-100" disabled={!transcript.trim()} on:click={generateActionItems}>Get Action Items</button>
-            {/if}
-          </div>
-        </div>
+        <ActionItemsAnalysis
+          {transcript}
+          {actionItems}
+          {actionItemsLoading}
+          {generateActionItems}
+        />
       </div>
     </div>
   </div>
