@@ -1,6 +1,10 @@
 import nodemailer from 'nodemailer';
+import { Resend } from 'resend'; // Ensure you run: npm install resend
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
+
+// Initialize Resend outside the handler to reuse the instance
+const resend = new Resend(env.RESEND_API_KEY);
 
 export async function POST({ request }) {
   try {
@@ -11,8 +15,13 @@ export async function POST({ request }) {
       throw new Error('Missing required email fields');
     }
 
-    if (!env.GMAIL_ADDRESS || !env.GMAIL_APP_PASSWORD) {
-      throw new Error('Email credentials are not configured');
+    // Validation for credentials based on the selected sender
+    if (env.MAIL_SENDER === 'resend') {
+      if (!env.RESEND_API_KEY) throw new Error('Resend API key is not configured');
+    } else {
+      if (!env.GMAIL_ADDRESS || !env.GMAIL_APP_PASSWORD) {
+        throw new Error('Gmail credentials are not configured');
+      }
     }
 
     // --------- FIX: Clean base64 PDF ----------
@@ -65,40 +74,58 @@ export async function POST({ request }) {
       </div>
     `;
 
-    // --------- SMTP TRANSPORT (RAILWAY SAFE) ----------
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: env.GMAIL_ADDRESS,
-        pass: env.GMAIL_APP_PASSWORD
-      },
-      connectionTimeout: 20000,
-      greetingTimeout: 20000,
-      socketTimeout: 30000
-    });
+    const subject = `Meeting Analysis - ${new Date().toLocaleDateString()}`;
+    const filename = `Meeting_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
 
-    // --------- SEND EMAIL ----------
-    await transporter.sendMail({
-      from: `"MeetLens AI" <${env.GMAIL_ADDRESS}>`,
-      to: recipient,
-      subject: `Meeting Analysis - ${new Date().toLocaleDateString()}`,
-      html: emailHtml,
-      attachments: [
-        {
-          filename: `Meeting_Report_${new Date()
-            .toISOString()
-            .slice(0, 10)}.pdf`,
-          content: cleanPdfBase64,
-          encoding: 'base64'
-        }
-      ]
-    });
+    // --------- CONDITIONAL LOGIC: RESEND VS NODEMAILER ----------
+    if (env.MAIL_SENDER === 'resend') {
+      const { error } = await resend.emails.send({
+        from: 'MeetLens AI <reports@reports.tifflo.in>',
+        to: recipient,
+        subject: subject,
+        html: emailHtml,
+        attachments: [
+          {
+            filename: filename,
+            content: cleanPdfBase64,
+          }
+        ]
+      });
+
+      if (error) throw error;
+    } else {
+      // --------- SMTP TRANSPORT (NODEMAILER) ----------
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: {
+          user: env.GMAIL_ADDRESS,
+          pass: env.GMAIL_APP_PASSWORD
+        },
+        connectionTimeout: 20000,
+        greetingTimeout: 20000,
+        socketTimeout: 30000
+      });
+
+      await transporter.sendMail({
+        from: `"MeetLens AI" <${env.GMAIL_ADDRESS}>`,
+        to: recipient,
+        subject: subject,
+        html: emailHtml,
+        attachments: [
+          {
+            filename: filename,
+            content: cleanPdfBase64,
+            encoding: 'base64'
+          }
+        ]
+      });
+    }
 
     return json({ success: true });
   } catch (err) {
-    console.error('SMTP SERVER ERROR:', err);
+    console.error('EMAIL ERROR:', err);
     return json(
       {
         success: false,
