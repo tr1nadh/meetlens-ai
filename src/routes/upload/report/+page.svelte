@@ -7,7 +7,7 @@
     toneResultStore, 
     meetingTypeStore,
     transcriptStore,
-    fileDetailsStore // Added this
+    fileDetailsStore 
   } from '$lib/store.js';
   import { fade, fly } from 'svelte/transition';
   import ShareReport from '../ShareReport.svelte';
@@ -19,7 +19,7 @@
   $: decisions = $keyDecisionsStore;
   $: tone = $toneResultStore;
   $: meetingType = $meetingTypeStore;
-  $: details = $fileDetailsStore; // Access the name, duration, and rep_id
+  $: details = $fileDetailsStore;
 
   function printReport() {
     window.print();
@@ -31,7 +31,9 @@
     <header class="report-header">
       <div class="header-content">
         <span class="badge">Intelligence Report</span>
-        <h1>{details.meeting_type || meetingType || 'General Meeting'} Analysis</h1>
+        
+        <h1 class="screen-title">{details.meeting_type || meetingType || 'General Meeting'} Analysis</h1>
+        <h1 class="print-title">{details.meeting_type || meetingType || 'General Meeting'} Analysis</h1>
         
         <div class="metadata-row">
           <p class="timestamp">
@@ -53,7 +55,7 @@
         </div>
       </div>
 
-      <div class="row">
+      <div class="row no-print">
           <div class="col-12">
               <ShareReport {summary} {actionItems} />
           </div>
@@ -180,7 +182,6 @@
     padding: 60px 24px;
   }
 
-  /* --- HEADER --- */
   .report-header {
     display: flex;
     justify-content: space-between;
@@ -188,6 +189,22 @@
     margin-bottom: 48px;
     padding-bottom: 24px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* --- TITLES --- */
+  .screen-title { 
+    font-size: 2.8rem; 
+    margin: 8px 0; 
+    font-weight: 900; 
+    background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: block;
+  }
+
+  .print-title {
+    display: none; /* Hidden on web, shown only in PDF */
   }
 
   .metadata-row {
@@ -200,15 +217,6 @@
   .meta-divider {
     color: rgba(255,255,255,0.1);
     font-size: 0.9rem;
-  }
-
-  h1 { 
-    font-size: 2.8rem; 
-    margin: 8px 0; 
-    font-weight: 900; 
-    background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
   }
 
   .badge { 
@@ -242,11 +250,6 @@
     transition: transform 0.3s ease, border-color 0.3s ease;
   }
 
-  .glass-card:hover {
-    border-color: rgba(99, 102, 241, 0.3);
-    transform: translateY(-4px);
-  }
-
   h3 { 
     font-size: 1.1rem; 
     color: #818cf8; 
@@ -257,39 +260,25 @@
     font-weight: 700;
   }
 
-  /* --- TAGS & UI --- */
   .sentiment-tag { 
-    display: inline-block; 
-    padding: 5px 14px; 
-    border-radius: 10px; 
-    font-size: 0.8rem; 
-    font-weight: 800; 
-    text-transform: uppercase; 
-    margin-bottom: 16px;
+    display: inline-block; padding: 5px 14px; border-radius: 10px; 
+    font-size: 0.8rem; font-weight: 800; text-transform: uppercase; margin-bottom: 16px;
   }
   .sentiment-tag.positive { background: rgba(16, 185, 129, 0.15); color: #34d399; }
   .sentiment-tag.negative { background: rgba(239, 68, 68, 0.15); color: #f87171; }
   .sentiment-tag.neutral { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
 
   .emotion-chip { background: rgba(255, 255, 255, 0.05); padding: 5px 12px; border-radius: 10px; font-size: 0.8rem; color: #94a3b8; margin: 4px; display: inline-block; }
-
   .summary-para { line-height: 1.7; color: #cbd5e1; font-size: 1rem; }
   
   .decision-list li { 
-    background: rgba(255, 255, 255, 0.03); 
-    padding: 16px; 
-    border-radius: 16px; 
-    margin-bottom: 12px; 
-    border-left: 4px solid #6366f1;
-    list-style: none;
+    background: rgba(255, 255, 255, 0.03); padding: 16px; border-radius: 16px; 
+    margin-bottom: 12px; border-left: 4px solid #6366f1; list-style: none;
   }
 
   .action-pill { 
-    background: rgba(99, 102, 241, 0.05); 
-    padding: 14px 18px; 
-    border-radius: 16px; 
-    border: 1px solid rgba(99, 102, 241, 0.1); 
-    margin-bottom: 10px;
+    background: rgba(99, 102, 241, 0.05); padding: 14px 18px; border-radius: 16px; 
+    border: 1px solid rgba(99, 102, 241, 0.1); margin-bottom: 10px;
   }
 
   .owner-tag { background: #6366f1; color: white; padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; margin-right: 10px; }
@@ -299,14 +288,30 @@
     :global(body) { 
       background: #ffffff !important; 
       color: #000000 !important;
+      -webkit-print-color-adjust: exact;
     }
 
-    .report-container { 
-      max-width: 100%; 
-      margin: 0; 
-      padding: 0; 
+    .no-print { display: none !important; }
+
+    /* FIX: Completely disable transparency and gradients for the print-specific title */
+    .screen-title { 
+      display: none !important; 
+    }
+    
+    .print-title { 
+      display: block !important; 
+      visibility: visible !important;
+      color: #000000 !important; 
+      -webkit-text-fill-color: #000000 !important; 
+      font-size: 32pt !important;
+      font-weight: 900 !important;
+      margin-bottom: 15px !important;
+      background: none !important; 
+      -webkit-background-clip: initial !important;
+      background-clip: initial !important;
     }
 
+    .report-container { max-width: 100%; margin: 0; padding: 0; }
     .report-grid { display: block !important; }
 
     .glass-card { 
@@ -320,30 +325,17 @@
       padding: 20px !important;
     }
 
-    h1 { 
-      background: none !important; 
-      -webkit-text-fill-color: #000 !important; 
-      color: #000 !important;
-      font-size: 26pt; 
-      margin-bottom: 10px;
-    }
-
     h3 { 
       color: #4f46e5 !important; 
       border-bottom: 1px solid #eee; 
       padding-bottom: 8px; 
-      font-size: 14pt;
+      font-size: 16pt;
     }
 
-    .summary-para, .highlights-content, .task-text { color: #111 !important; font-size: 11pt; }
-    
-    .print-btn, .badge { display: none !important; }
-
-    .decision-list li, .action-pill { 
-      background: #f8fafc !important; 
-      border: 1px solid #e2e8f0 !important; 
-      color: #000 !important; 
-    }
+    .timestamp, .timestamp i { color: #000000 !important; opacity: 1 !important; }
+    .meta-divider { color: #cccccc !important; }
+    .summary-para, .highlights-content, .task-text { color: #000000 !important; font-size: 12pt; }
+    .badge { display: none !important; }
   }
 
   /* --- MOBILE RESPONSIVE --- */
