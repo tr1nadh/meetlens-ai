@@ -240,7 +240,7 @@
           </h2>
           <div id="q2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
             <div class="accordion-body text-light-muted">
-              Yes. We encrypt all audio files and transcripts using AES-256 encryption. Your data is private and never used for training without your explicit permission.
+              Yes. We prioritize your privacy. All audio files are automatically deleted once they are processed. Your data is never used for training without your explicit permission.
             </div>
           </div>
         </div>
@@ -252,19 +252,19 @@
           </h2>
           <div id="q3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
             <div class="accordion-body text-light-muted">
-              We currently support 50+ languages, including English, Spanish, French, German, Japanese, and Mandarin, with automatic language detection.
+              As of now, only English language is supported. We are working hard to bring more languages to MeetLens very soon.
             </div>
           </div>
         </div>
         <div class="accordion-item mb-3">
           <h2 class="accordion-header">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q4">
-              Can I upload video files or just audio?
+              Can I upload video files?
             </button>
           </h2>
           <div id="q4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
             <div class="accordion-body text-light-muted">
-              Both! You can upload MP3, WAV, M4A, MP4, MOV, and AVI files. We also offer direct integrations with Zoom and Microsoft Teams.
+              Currently, only audio files are supported (MP3, WAV, M4A). We recommend extracting the audio from your video files before uploading for the best results.
             </div>
           </div>
         </div>
@@ -272,7 +272,7 @@
     </div>
   </section>
 
-  <section class="cta-section text-center">
+  <section class="cta-section text-center mt-5">
     <div class="container pb-5">
       <div class="cta-glow-box p-5">
         <h2 class="h1 fw-bold text-white mb-3">Stop re-listening to meetings</h2>
