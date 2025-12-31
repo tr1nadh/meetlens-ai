@@ -51,7 +51,7 @@ export async function POST({ request }) {
 
         // 4. Send Email
         await transporter.sendMail({
-            from: `"AI Meeting Assistant" <${GMAIL_ADDRESS}>`,
+            from: `"AI Meeting Assistant" <${env.GMAIL_ADDRESS}>`,
             to: recipient,
             subject: `Meeting Analysis - ${new Date().toLocaleDateString()}`,
             html: emailHtml,
