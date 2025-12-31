@@ -1,5 +1,4 @@
 <script>
-
   import {
     actionItemsStore,
     highlightsStore,
@@ -8,8 +7,10 @@
     speakerMapStore,
     summaryStore,
     toneResultStore,
-    transcriptStore
+    transcriptStore,
+    fileDetailsStore
   } from '$lib/store.js';
+  
   import ActionItemsAnalysis from './ActionItemsAnalysis.svelte';
   import AudioUploader from './AudioUploader.svelte';
   import DecisionAnalysis from './DecisionAnalysis.svelte';
@@ -19,8 +20,7 @@
   import ToneAnalysis from './ToneAnalysis.svelte';
   import TranscriptBlock from './TranscriptBlock.svelte';
 
-
-  /* Script logic remains untouched as requested */
+  /* --- UI & Loading States --- */
   let file = null;
   let audioUrl = "";
   let loading = false;
@@ -29,20 +29,16 @@
 
   let summaryLoading = false;
   let summaryCopied = false;
-
   let actionItemsLoading = false;
   let actionItemsCopied = false;
-
   let highlightsLoading = false;
   let highlightsCopied = false;
-
   let keyDecisionsLoading = false;
   let keyDecisionsCopied = false;
-
-  // Tone state
   let toneLoading = false;
   let toneError = "";
 
+  /* --- Store Initialization --- */
   let meetingType = $meetingTypeStore || "";
   let transcript = $transcriptStore || "";
   let summary = $summaryStore || "";
@@ -51,8 +47,9 @@
   let keyDecisions = $keyDecisionsStore || "";
   let toneResult = $toneResultStore || null;
   let speakerMap = $speakerMapStore || {};
+  let details = $fileDetailsStore || { name: "", meeting_type: "", duration: "", rep_id: "0" };
 
-  // Whenever 'transcript' changes locally, update the persisted store automatically
+  /* --- Reactive Sync to Stores --- */
   $: $transcriptStore = transcript;
   $: $summaryStore = summary;
   $: $meetingTypeStore = meetingType;
@@ -61,50 +58,66 @@
   $: $keyDecisionsStore = keyDecisions;
   $: $toneResultStore = toneResult;
   $: $speakerMapStore = speakerMap;
+  $: $fileDetailsStore = details;
 
-  function handleFileChange(e) {
-    file = e.target.files[0];
-    meetingType = "";
-    transcript = "";
-    summary = "";
-    actionItems = "";
-    error = "";
-    copied = false;
-    summaryCopied = false;
-    actionItemsCopied = false;
-    audioUrl = file ? URL.createObjectURL(file) : "";
+  // Sync meeting type dropdown to the details metadata object
+  $: if (meetingType) {
+    details = { ...details, meeting_type: meetingType };
   }
 
+  /* --- File Metadata & Uploader Logic --- */
+  async function getAudioMetadata(file) {
+    return new Promise((resolve) => {
+      const audio = new Audio();
+      audio.src = URL.createObjectURL(file);
+      audio.onloadedmetadata = () => {
+        const minutes = Math.floor(audio.duration / 60);
+        const seconds = Math.floor(audio.duration % 60);
+        resolve(`${minutes}m ${seconds}s`);
+      };
+    });
+  }
+
+  async function handleNewFile(event) {
+    file = event.detail.file;
+    audioUrl = event.detail.url;
+    error = "";
+    if (file) {
+      // Logic: Save to local state then store via reactive sync
+      const durationStr = event.detail.duration || await getAudioMetadata(file);
+      details = {
+        name: file.name,
+        meeting_type: meetingType || "General Meeting",
+        duration: durationStr,
+        rep_id: Math.floor(1000 + Math.random() * 9000).toString()
+      };
+    }
+  }
+
+  function handleClear() {
+    file = null;
+    audioUrl = "";
+    details = { name: "", meeting_type: "", duration: "", rep_id: "0" };
+  }
+
+  /* --- API Handlers --- */
   async function uploadAudio() {
     if (!file || !meetingType) return;
-    loading = true;
-    transcript = "";
-    summary = "";
-    actionItems = "";
-    error = "";
+    loading = true; error = ""; transcript = "";
     const formData = new FormData();
     formData.append("audio", file);
     formData.append("meetingType", meetingType);
     try {
-      const res = await fetch("/api/lemoncribe", {
-        method: "POST",
-        body: formData
-      });
+      const res = await fetch("/api/lemoncribe", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Transcription failed");
       transcript = data.text || "";
-    } catch (err) {
-      error = err.message;
-    } finally {
-      loading = false;
-    }
+    } catch (err) { error = err.message; } finally { loading = false; }
   }
 
   async function generateSummary() {
     if (!transcript.trim()) return;
-    summaryLoading = true;
-    summary = "";
-    summaryCopied = false;
+    summaryLoading = true; summary = "";
     try {
       const res = await fetch("/api/summary", {
         method: "POST",
@@ -112,20 +125,13 @@
         body: JSON.stringify({ transcript, meetingType })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Summary failed");
       summary = data.summary;
-    } catch (err) {
-      error = err.message;
-    } finally {
-      summaryLoading = false;
-    }
+    } catch (err) { error = err.message; } finally { summaryLoading = false; }
   }
 
   async function generateActionItems() {
     if (!transcript.trim()) return;
-    actionItemsLoading = true;
-    actionItems = "";
-    actionItemsCopied = false;
+    actionItemsLoading = true; actionItems = "";
     try {
       const res = await fetch("/api/action-items", {
         method: "POST",
@@ -133,38 +139,13 @@
         body: JSON.stringify({ transcript, meetingType })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Action items failed");
       actionItems = data.actionItems;
-    } catch (err) {
-      error = err.message;
-    } finally {
-      actionItemsLoading = false;
-    }
-  }
-
-  async function copyTranscript() {
-    await navigator.clipboard.writeText(transcript);
-    copied = true;
-    setTimeout(() => (copied = false), 2000);
-  }
-
-  async function copySummary() {
-    await navigator.clipboard.writeText(summary);
-    summaryCopied = true;
-    setTimeout(() => (summaryCopied = false), 2000);
-  }
-
-  async function copyActionItems() {
-    await navigator.clipboard.writeText(actionItems);
-    actionItemsCopied = true;
-    setTimeout(() => (actionItemsCopied = false), 2000);
+    } catch (err) { error = err.message; } finally { actionItemsLoading = false; }
   }
 
   async function generateKeyDecisions() {
     if (!transcript.trim()) return;
-    keyDecisionsLoading = true;
-    keyDecisions = "";
-    keyDecisionsCopied = false;
+    keyDecisionsLoading = true; keyDecisions = "";
     try {
       const res = await fetch("/api/key-decisions", {
         method: "POST",
@@ -172,26 +153,13 @@
         body: JSON.stringify({ transcript, meetingType })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Key decisions failed");
       keyDecisions = data.keyDecisions;
-    } catch (err) {
-      error = err.message;
-    } finally {
-      keyDecisionsLoading = false;
-    }
-  }
-
-  async function copyKeyDecisions() {
-    await navigator.clipboard.writeText(keyDecisions);
-    keyDecisionsCopied = true;
-    setTimeout(() => (keyDecisionsCopied = false), 2000);
+    } catch (err) { error = err.message; } finally { keyDecisionsLoading = false; }
   }
 
   async function generateHighlights() {
     if (!transcript.trim()) return;
-    highlightsLoading = true;
-    highlights = "";
-    highlightsCopied = false;
+    highlightsLoading = true; highlights = "";
     try {
       const res = await fetch("/api/highlights", {
         method: "POST",
@@ -199,213 +167,113 @@
         body: JSON.stringify({ transcript, meetingType })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Highlights failed");
       highlights = data.highlights;
-    } catch (err) {
-      error = err.message;
-    } finally {
-      highlightsLoading = false;
-    }
-  }
-
-  async function copyHighlights() {
-    await navigator.clipboard.writeText(highlights);
-    highlightsCopied = true;
-    setTimeout(() => (highlightsCopied = false), 2000);
+    } catch (err) { error = err.message; } finally { highlightsLoading = false; }
   }
 
   async function analyzeTone() {
     if (!transcript || transcript.trim().length < 20) return;
-    toneLoading = true;
-    toneError = "";
-    toneResult = null;
+    toneLoading = true; toneError = ""; toneResult = null;
     try {
       const res = await fetch("/api/tone", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ transcript, meetingType })
       });
-      if (!res.ok) throw new Error("Tone analysis failed");
       toneResult = await res.json();
-    } catch (err) {
-      console.error(err);
-      toneError = "Unable to analyze tone";
-    } finally {
-      toneLoading = false;
-    }
+    } catch (err) { toneError = "Unable to analyze tone"; } finally { toneLoading = false; }
   }
 
-  // Helper for Generate All
   function generateAllInsights() {
-    analyzeTone();
-    generateSummary();
-    generateKeyDecisions();
-    generateActionItems();
-    generateHighlights();
+    analyzeTone(); generateSummary(); generateKeyDecisions(); generateActionItems(); generateHighlights();
   }
 
-    // ===== Speaker rename + editable transcript (ADDED) =====
-  // { SPEAKER_00: "CEO" }
+  /* --- Clipboard Functions --- */
+  async function copyTranscript() {
+    await navigator.clipboard.writeText(transcript);
+    copied = true;
+    setTimeout(() => (copied = false), 2000);
+  }
+
+  /* --- Transcript & Speaker Mapping Logic --- */
   let activeSpeakerId = null;
   let tempSpeakerName = "";
 
-// Instead of "", use the same logic you used for the speaker mapping
-  let editableTranscript = ($transcriptStore || "").replace(
+  $: editableTranscript = (transcript || "").replace(
     /Speaker\s+(SPEAKER_\d+)/g,
     (_, id) => `Speaker ${speakerMap[id] || id}`
   );
 
-  // Extract speaker IDs
   $: speakerIds = Array.from(
-    new Set(
-      (transcript.match(/Speaker\s+(SPEAKER_\d+)/g) || [])
-        .map(s => s.replace("Speaker ", ""))
-    )
+    new Set((transcript.match(/Speaker\s+(SPEAKER_\d+)/g) || []).map(s => s.replace("Speaker ", "")))
   );
 
-  // Init mapping
-  $: {
-    speakerIds.forEach(id => {
-      if (!speakerMap[id]) speakerMap[id] = id;
-    });
-  }
+  $: { speakerIds.forEach(id => { if (!speakerMap[id]) speakerMap[id] = id; }); }
 
-  // Sync editable transcript when transcript changes
-  $: if (transcript) {
-    editableTranscript = transcript.replace(
-      /Speaker\s+(SPEAKER_\d+)/g,
-      (_, id) => `Speaker ${speakerMap[id] || id}`
-    );
-  }
-
-  // 🔒 Restore locked speaker IDs on edit
   function handleTranscriptEdit(e) {
     let value = e.target.value;
-
     speakerIds.forEach(id => {
       const safeLabel = `Speaker ${speakerMap[id] || id}`;
       const lockedLabel = `Speaker ${id}`;
       value = value.replaceAll(safeLabel, lockedLabel);
     });
-
-    transcript = value; // internal stays clean
-    editableTranscript = value.replace(
-      /Speaker\s+(SPEAKER_\d+)/g,
-      (_, id) => `Speaker ${speakerMap[id] || id}`
-    );
+    transcript = value;
   }
 
   function openSpeakerModal(id) {
     activeSpeakerId = id;
     tempSpeakerName = speakerMap[id] === id ? "" : speakerMap[id];
-    new bootstrap.Modal(
-      document.getElementById("speakerModal")
-    ).show();
+    new bootstrap.Modal(document.getElementById("speakerModal")).show();
   }
 
-function saveSpeakerName() {
+  function saveSpeakerName() {
     if (activeSpeakerId) {
-      // Use the $ prefix to ensure the reactive store assignment triggers
       $speakerMapStore[activeSpeakerId] = tempSpeakerName.trim() || activeSpeakerId;
-      // Re-assign to local for UI reactivity
-      speakerMap = $speakerMapStore; 
+      speakerMap = { ...$speakerMapStore };
     }
   }
 
+  /* --- Audio Player Word-Highlighting Logic --- */
   let isPlaying = false;
   let currentTime = 0;
   let duration = 0;
+  let activeTab = 'summary';
+  let uploaderComponent;
 
-  function handlePlayState(state) {
-    isPlaying = state;
-  }
-
-// Improved scrolling logic to keep the active word centered
+  function handlePlayState(state) { isPlaying = state; }
   function handleTimeUpdate(e) {
     currentTime = e.target.currentTime;
     duration = e.target.duration;
-    
     if (isPlaying) {
-      const container = document.getElementById('highlight-container');
-      const activeWord = container?.querySelector('.word-active');
-      
-      if (activeWord) {
-        // This scrolls specifically to the active word rather than a percentage
-        activeWord.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center'
-        });
-      }
+      const activeWord = document.getElementById('highlight-container')?.querySelector('.word-active');
+      if (activeWord) activeWord.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
 
+  $: highlightWords = editableTranscript
+    .replace(/Speaker\s+[^\n:]+[:]?/g, '')
+    .split(/\s+/)
+    .filter(word => word.length > 0);
 
-  // Reactive words for the highlight view
-  $: words = editableTranscript.split(' ');
-// --- FIND THESE LINES AND UPDATE THEM ---
+  const lookAheadOffset = 0.12;
+  $: currentWordIndex = duration > 0 
+    ? Math.floor(((currentTime + lookAheadOffset) / duration) * highlightWords.length) 
+    : 0;
 
-// 1. Ensure we only use the cleaned list for the highlight view
-$: highlightWords = editableTranscript
-.replace(/Speaker\s+[^\n:]+[:]?/g, '') // Removes "Speaker Name:"
-.split(/\s+/)
-.filter(word => word.length > 0);
-
-// Adjust this value (0.5 to 1.2) to find your perfect "snappiness"
-const lookAheadOffset = 0.12;
-
-// 2. IMPORTANT: Calculate index based on the CLEANED list length
-$: currentWordIndex = duration > 0 
-? Math.floor(((currentTime + lookAheadOffset) / duration) * highlightWords.length) 
-: 0;
-
-  let uploaderComponent;
-  function  clearSession() {
-    if (confirm("This will permanently delete the current transcript and all AI insights. Continue?")) {
-      // Reset local variables
-      uploaderComponent.clearFile();
-      transcript = "";
-      summary = "";
-      meetingType = "";
-      actionItems = "";
-      highlights = "";
-      keyDecisions = "";
-      toneResult = null;
-      speakerMap = {};
-      
-      // Reset UI state
-      file = null;
-      audioUrl = "";
-      editableTranscript = "";
-      
-      // The reactive $: statements will automatically update the stores to ""
-    }
-  }
-
-
-  function handleNewFile(event) {
-    // These come from the 'dispatch' in the child component
-    file = event.detail.file;
-    audioUrl = event.detail.url;
-    error = "";
-  }
-
-  function handleClear() {
-    file = null;
-    audioUrl = "";
-  }
-
-  let activeTab = 'summary';
-
+  /* --- Helper UI Functions --- */
   function scrollTabs(amount) {
-  const container = document.getElementById('tabs-nav-scroll');
-  if (container) {
-    container.scrollBy({
-      left: amount,
-      behavior: 'smooth'
-    });
+    document.getElementById('tabs-nav-scroll')?.scrollBy({ left: amount, behavior: 'smooth' });
   }
-}
 
+  function clearSession() {
+    if (confirm("Permanently delete session?")) {
+      if (uploaderComponent) uploaderComponent.clearFile();
+      transcript = ""; summary = ""; meetingType = ""; actionItems = ""; 
+      highlights = ""; keyDecisions = ""; toneResult = null; speakerMap = {};
+      file = null; audioUrl = ""; 
+      details = { name: "", meeting_type: "", duration: "", rep_id: "0" };
+    }
+  }
 </script>
 
 <div class="upload-page-wrapper">
@@ -495,7 +363,7 @@ $: currentWordIndex = duration > 0
       </div>
     </div>
 
-    <div id="analysis-dashboard" class="row g-4">
+    <div class="row g-4">
       <div class="col-lg-7">
         
         <TranscriptBlock 
@@ -518,7 +386,9 @@ $: currentWordIndex = duration > 0
                 </button>
             </div>
             <div class="col-6">
-              <ShareReport {summary} {actionItems} />
+              <a class="btn btn-outline-glass w-100 py-2 text-white" href="/upload/report" target="_blank" rel="noopener noreferrer">
+                  <i class="fa-solid fa-share-nodes me-2"></i> Share Result
+              </a>
             </div>
         </div>
 

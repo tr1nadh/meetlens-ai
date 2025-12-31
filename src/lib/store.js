@@ -9,3 +9,5 @@ export const highlightsStore = persisted("ml_highlights", "");
 export const keyDecisionsStore = persisted("ml_keyDecisions", "");
 export const toneResultStore = persisted("ml_toneResult", null);
 export const speakerMapStore = persisted("ml_speakerMap", {});
+export const fileDetailsStore = persisted("ml_fileDetails", 
+    { name: "", meeting_type: "", duration: "", rep_id: "0" });
