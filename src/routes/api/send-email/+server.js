@@ -39,24 +39,22 @@ export async function POST({ request }) {
 
         // 3. Configure Nodemailer Transporter (Railway/Production Fix)
             const transporter = nodemailer.createTransport({
+                // Use the direct IP-friendly host
                 host: 'smtp.gmail.com',
                 port: 465,
-                secure: true, // Port 465 MUST use secure: true
+                secure: true, 
                 auth: {
                     user: env.GMAIL_ADDRESS,
                     pass: env.GMAIL_APP_PASSWORD
                 },
-                // SSL/TLS Fixes for Cloud Environments
+                // Force these settings for Railway's Docker environment
                 tls: {
-                    // This ensures the connection doesn't hang if the 
-                    // container has weird internal networking rules
-                    rejectUnauthorized: false,
-                    servername: 'smtp.gmail.com' 
+                    servername: 'smtp.gmail.com',
+                    rejectUnauthorized: false
                 },
-                // Force the connection to wait long enough for the handshake
-                connectionTimeout: 20000, 
+                connectionTimeout: 20000, // 20 seconds
                 greetingTimeout: 20000,
-                socketTimeout: 30000,
+                socketTimeout: 30000
             });
 
         // 4. Send Email
