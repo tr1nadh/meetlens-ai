@@ -241,6 +241,7 @@
     generateSummary();
     generateKeyDecisions();
     generateActionItems();
+    generateHighlights();
   }
 
     // ===== Speaker rename + editable transcript (ADDED) =====
@@ -393,7 +394,7 @@ $: currentWordIndex = duration > 0
     audioUrl = "";
   }
 
-  let activeTab = 'tone';
+  let activeTab = 'summary';
 
   function scrollTabs(amount) {
   const container = document.getElementById('tabs-nav-scroll');
