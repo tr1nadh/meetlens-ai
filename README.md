@@ -22,11 +22,11 @@ MeetLens is a high-performance **AI-powered meeting & call analysis tool** built
 
 ### 📸 Product Gallery
 
-![Homepage](assets/screenshots/homepage.png)
-![Upload](assets/screenshots/upload.png)
-![Audio player](assets/screenshots/audio-player.png)
-![Results](assets/screenshots/results.png)
-![Export](assets/screenshots/export.png)
+![Homepage](/static/assets/screenshots/homepage.png)
+![Upload](/static/assets/screenshots/upload.png)
+![Audio player](/static/assets/screenshots/audio-player.png)
+![Results](/static/assets/screenshots/results.png)
+![Export](/static/assets/screenshots/export.png)
 
 ---
 
