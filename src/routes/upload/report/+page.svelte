@@ -6,7 +6,6 @@
     keyDecisionsStore, 
     toneResultStore, 
     meetingTypeStore,
-    transcriptStore,
     fileDetailsStore 
   } from '$lib/store.js';
   import { fade, fly } from 'svelte/transition';
@@ -30,10 +29,9 @@
   <div class="report-container">
     <header class="report-header">
       <div class="header-content">
-        <span class="badge">Intelligence Report</span>
+        <span class="badge no-print">Intelligence Report</span>
         
-        <h1 class="screen-title">{details.meeting_type || meetingType || 'General Meeting'} Analysis</h1>
-        <h1 class="print-title">{details.meeting_type || meetingType || 'General Meeting'} Analysis</h1>
+        <h1 class="fw-bold text-uppercase mt-2 mb-2">{details.meeting_type || meetingType || 'General Meeting'} Analysis</h1>
         
         <div class="metadata-row">
           <p class="timestamp">
@@ -204,7 +202,7 @@
   }
 
   .print-title {
-    display: none; /* Hidden on web, shown only in PDF */
+    display: none;
   }
 
   .metadata-row {
@@ -247,7 +245,6 @@
     backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 28px;
-    transition: transform 0.3s ease, border-color 0.3s ease;
   }
 
   h3 { 
@@ -282,61 +279,6 @@
   }
 
   .owner-tag { background: #6366f1; color: white; padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; margin-right: 10px; }
-
-  /* --- PDF & PRINT OPTIMIZATION --- */
-  @media print {
-    :global(body) { 
-      background: #ffffff !important; 
-      color: #000000 !important;
-      -webkit-print-color-adjust: exact;
-    }
-
-    .no-print { display: none !important; }
-
-    /* FIX: Completely disable transparency and gradients for the print-specific title */
-    .screen-title { 
-      display: none !important; 
-    }
-    
-    .print-title { 
-      display: block !important; 
-      visibility: visible !important;
-      color: #000000 !important; 
-      -webkit-text-fill-color: #000000 !important; 
-      font-size: 32pt !important;
-      font-weight: 900 !important;
-      margin-bottom: 15px !important;
-      background: none !important; 
-      -webkit-background-clip: initial !important;
-      background-clip: initial !important;
-    }
-
-    .report-container { max-width: 100%; margin: 0; padding: 0; }
-    .report-grid { display: block !important; }
-
-    .glass-card { 
-      background: #ffffff !important; 
-      color: #000000 !important; 
-      border: 1px solid #e2e8f0 !important; 
-      box-shadow: none !important; 
-      backdrop-filter: none !important;
-      break-inside: avoid;
-      margin-bottom: 24px;
-      padding: 20px !important;
-    }
-
-    h3 { 
-      color: #4f46e5 !important; 
-      border-bottom: 1px solid #eee; 
-      padding-bottom: 8px; 
-      font-size: 16pt;
-    }
-
-    .timestamp, .timestamp i { color: #000000 !important; opacity: 1 !important; }
-    .meta-divider { color: #cccccc !important; }
-    .summary-para, .highlights-content, .task-text { color: #000000 !important; font-size: 12pt; }
-    .badge { display: none !important; }
-  }
 
   /* --- MOBILE RESPONSIVE --- */
   @media (max-width: 900px) {
