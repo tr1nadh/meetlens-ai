@@ -27,12 +27,9 @@ export async function POST({ request }) {
         const emailHtml = `
             <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; padding: 20px; color: #1e293b; background-color: #ffffff; border: 1px solid #f1f5f9; border-radius: 16px;">
                 <h1 style="color: #6366f1; text-align: center;">Meeting Insights</h1>
-                
                 <h3 style="border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; color: #0f172a;">Summary</h3>
                 <p style="line-height: 1.6; white-space: pre-wrap; color: #334155;">${summary}</p>
-                
                 ${actionItemsHtml}
-                
                 <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #f1f5f9; text-align: center;">
                     <p style="color: #94a3b8; font-size: 12px;">
                         The full visual dashboard with analysis charts is attached as a PDF.
@@ -40,18 +37,28 @@ export async function POST({ request }) {
                 </div>
             </div>`;
 
-        // 3. Configure Nodemailer Transporter
+        // 3. Configure Nodemailer Transporter (Railway/Production Fix)
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: 'smtp.gmail.com',
+            port: 465, // Using 465 because Railway blocks port 25
+            secure: true, // Use SSL for port 465
             auth: {
                 user: env.GMAIL_ADDRESS,
                 pass: env.GMAIL_APP_PASSWORD
+            },
+            // Critical: Add timeouts to prevent ETIMEDOUT on cloud networks
+            connectionTimeout: 15000, 
+            greetingTimeout: 15000,
+            socketTimeout: 30000,
+            tls: {
+                // Helps with some cloud networking handshake issues
+                rejectUnauthorized: false
             }
         });
 
         // 4. Send Email
         await transporter.sendMail({
-            from: `"AI Meeting Assistant" <${env.GMAIL_ADDRESS}>`,
+            from: `"MeetLens AI" <${env.GMAIL_ADDRESS}>`,
             to: recipient,
             subject: `Meeting Analysis - ${new Date().toLocaleDateString()}`,
             html: emailHtml,
@@ -62,10 +69,10 @@ export async function POST({ request }) {
             }]
         });
 
-        return json({ success: true, provider: 'nodemailer' });
+        return json({ success: true });
 
     } catch (err) {
-        console.error('SERVER ERROR:', err);
+        console.error('SMTP SERVER ERROR:', err);
         return json(
             { success: false, error: err.message || 'Internal Server Error' }, 
             { status: 500 }
