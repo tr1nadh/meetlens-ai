@@ -386,7 +386,7 @@
                 </button>
             </div>
             <div class="col-6">
-              <a class="btn btn-outline-glass w-100 py-2 text-white" href="/upload/report" target="_blank" rel="noopener noreferrer">
+              <a class="btn btn-outline-glass w-100 py-2 text-white" href="/upload/report" rel="noopener noreferrer">
                   <i class="fa-solid fa-share-nodes me-2"></i> Share Result
               </a>
             </div>
