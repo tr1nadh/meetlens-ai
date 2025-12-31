@@ -21,6 +21,15 @@ export async function POST({ request }) {
       );
     }
 
+    // ✅ CLEANUP FUNCTIONALITY: Normalization
+    // Collapses whitespace/newlines to prevent context fragmentation,
+    // ensuring the AI sees the 'Decision' and its 'Evidence' as connected.
+    const normalizedTranscript = transcript
+      .replace(/\r?\n|\r/g, ' ') 
+      .replace(/\s+/g, ' ')      
+      .replace(/([A-Z][a-z]+ \d?:|[A-Z]{2,}:)/g, '\n$1') 
+      .trim();
+
     const endpoint = `https://${REGION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${REGION}/publishers/google/models/gemini-2.0-flash-lite:generateContent`;
 
     const meetingContext = meetingType
@@ -29,6 +38,9 @@ export async function POST({ request }) {
 
     const prompt = `
 You are a high-precision analyst. Your task is to identify and extract "Key Decisions" from this ${meetingContext} transcript.
+
+### Important Formatting Note:
+The transcript below has been normalized. Treat it as a single chronological flow.
 
 A Key Decision is a confirmed agreement, approval, rejection, or definitive choice made during the conversation. 
 
@@ -59,7 +71,7 @@ Return ONLY a valid JSON object following this exact structure:
 }
 
 Transcript:
-${transcript}
+${normalizedTranscript}
     `.trim();
 
     const res = await fetch(endpoint, {

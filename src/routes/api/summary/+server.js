@@ -16,6 +16,15 @@ export async function POST({ request }) {
       return json({ error: "Transcript too short" }, { status: 400 });
     }
 
+    // ✅ CLEANUP FUNCTIONALITY: Normalization
+    // Essential for summaries to ensure the AI connects ideas across 
+    // different speakers without the distraction of broken lines.
+    const normalizedTranscript = transcript
+      .replace(/\r?\n|\r/g, ' ') 
+      .replace(/\s+/g, ' ')      
+      .replace(/([A-Z][a-z]+ \d?:|[A-Z]{2,}:)/g, '\n$1') 
+      .trim();
+
     const endpoint = `https://${REGION}-aiplatform.googleapis.com/v1/projects/${GCP_PROJECT_ID}/locations/${REGION}/publishers/google/models/${MODEL_ID}:generateContent`;
 
     const systemInstruction = `You are a robotic, deterministic scribe. 
@@ -28,7 +37,7 @@ export async function POST({ request }) {
 
     const userPrompt = `
       Meeting Type: ${meetingType || "Professional"}
-      Transcript: ${transcript}
+      Transcript: ${normalizedTranscript}
       
       Generate a single paragraph summary. Focus on facts and outcomes.
     `;

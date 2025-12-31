@@ -19,10 +19,22 @@ export async function POST({ request }) {
       return json({ error: "Transcript is too short" }, { status: 400 });
     }
 
+    // ✅ CLEANUP FUNCTIONALITY: Normalization
+    // Essential for tone analysis to detect "hesitation" or "conflict" 
+    // that spans across multiple dialogue turns.
+    const normalizedTranscript = transcript
+      .replace(/\r?\n|\r/g, ' ') 
+      .replace(/\s+/g, ' ')      
+      .replace(/([A-Z][a-z]+ \d?:|[A-Z]{2,}:)/g, '\n$1') 
+      .trim();
+
     const endpoint = `https://${REGION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${REGION}/publishers/google/models/${MODEL_ID}:generateContent`;
 
     const prompt = `
 You are a high-precision linguistic expert and conversation analyst. Analyze the provided ${meetingType} transcript for tone, sentiment, and underlying risk.
+
+### Important Note:
+The transcript below has been normalized. Treat the text as a continuous chronological stream to detect subtle shifts in mood or confidence.
 
 ### Objectives:
 1. **Tone & Sentiment:** Identify the overall atmosphere (e.g., Professional, Assertive, Tense) and sentiment polarity.
@@ -51,7 +63,7 @@ Return ONLY a valid JSON object with this exact structure:
 
 Transcript:
 """
-${transcript}
+${normalizedTranscript}
 """
     `.trim();
 
@@ -64,7 +76,6 @@ ${transcript}
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
-          // Deterministic settings for consistent analysis
           temperature: 0, 
           topP: 1,
           topK: 1,

@@ -21,7 +21,15 @@ export async function POST({ request }) {
       );
     }
 
-    // ✅ SAME model, SAME endpoint
+    // ✅ CLEANUP FUNCTIONALITY
+    // Normalizing transcript to remove excessive gaps while keeping speaker names.
+    // This allows Gemini to connect context across multiple lines of dialogue.
+    const normalizedTranscript = transcript
+      .replace(/\r?\n|\r/g, ' ') 
+      .replace(/\s+/g, ' ')      
+      .replace(/([A-Z][a-z]+ \d?:|[A-Z]{2,}:)/g, '\n$1') 
+      .trim();
+
     const endpoint = `https://${REGION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${REGION}/publishers/google/models/gemini-2.0-flash-lite:generateContent`;
 
     const meetingContext = meetingType
@@ -35,21 +43,20 @@ Definition:
 Highlights are important points, insights, concerns, or notable moments from the conversation.
 They provide context and understanding but do NOT require follow-up actions.
 
-Rules:
-- Extract only notable or meaningful points from the conversation
-- Do NOT include action items or tasks
-- Do NOT include decisions or approvals
-- Do NOT summarize the entire ${meetingContext}
-- Do NOT invent information
-- Highlights must be directly supported by the transcript
-- Output as a bullet list
+Instructions:
+- Treat the transcript as a continuous chronological stream.
+- Do not let irregular formatting or line breaks influence the importance of a point.
+- Extract only notable or meaningful points from the conversation.
+- Do NOT include action items, tasks, decisions, or approvals.
+- Highlights must be directly supported by the transcript.
+- Output as a bullet list.
 - If no clear highlights exist, say: "No notable highlights identified."
 
 Transcript:
-${transcript}
+${normalizedTranscript}
     `.trim();
 
-    console.log("[LOG] Highlights Prompt:", prompt);
+    console.log("[LOG] Highlights Prompt (Normalized):", prompt);
 
     const res = await fetch(endpoint, {
       method: "POST",
@@ -77,9 +84,7 @@ ${transcript}
     }
 
     const data = await res.json();
-
-    const highlights =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    const highlights = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
     if (!highlights) {
       throw new Error("Failed to generate highlights");

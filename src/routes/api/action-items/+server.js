@@ -21,6 +21,15 @@ export async function POST({ request }) {
       );
     }
 
+    // ✅ CLEANUP FUNCTIONALITY: Normalizing the transcript
+    // This removes excessive newlines and spaces that cause accuracy issues 
+    // while keeping speaker structure intact for task assignment.
+    const normalizedTranscript = transcript
+      .replace(/\r?\n|\r/g, ' ') // 1. Flatten all newlines into spaces
+      .replace(/\s+/g, ' ')      // 2. Collapse multiple spaces into one
+      .replace(/([A-Z][a-z]+ \d?:|[A-Z]{2,}:)/g, '\n$1') // 3. Re-insert clean breaks before "Speaker Name:"
+      .trim();
+
     const endpoint = `https://${REGION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${REGION}/publishers/google/models/gemini-2.0-flash-lite:generateContent`;
 
     const meetingContext = meetingType
@@ -34,6 +43,9 @@ You are a high-precision analyst. Your goal is to identify and extract every act
 1. **Explicit Actions:** Direct requests or promises (e.g., "I will send the file").
 2. **Implied Actions:** Captured when a participant agrees to a suggestion or acknowledges a responsibility (e.g., "That makes sense, I'm on it").
 3. **Follow-ups:** Any mention of a future meeting or status check.
+
+### Important:
+The transcript below has been normalized for processing. Treat the text as a continuous chronological conversation. Do not let line breaks influence the importance of a point.
 
 ### Data Requirements for each item:
 - **task:** A clear, standalone description of what needs to be done.
@@ -59,7 +71,7 @@ You are a high-precision analyst. Your goal is to identify and extract every act
 - Return an empty array if absolutely no tasks are found.
 
 Transcript:
-${transcript}
+${normalizedTranscript}
     `.trim();
 
     const res = await fetch(endpoint, {
