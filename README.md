@@ -1,229 +1,129 @@
+Ah, I understand! When I wrap it in a "code block" (the gray box), some editors double the characters or formatting when you paste.
+
+Here is the **normal text** version. You can copy everything from the title `# 🎧 MeetLens` down to the end.
+
 # 🎧 MeetLens — AI Meeting & Call Analyzer
 
-> Turn raw meeting audio into **clear summaries, action items, and decisions** — in minutes.
+> **Team: AIB au** > *Turning raw meeting audio into structured, actionable intelligence in seconds.*
 
-MeetLens is an **AI-powered meeting & call analysis tool** designed for professionals who attend multiple meetings daily and need **fast, accurate insights without re-listening to recordings**.
+MeetLens is a high-performance **AI-powered meeting & call analysis tool** built for the modern professional. Designed to bridge the gap between "having a recording" and "having the answers," MeetLens extracts summaries, action items, and emotional intelligence from your conversations.
 
-Built as a **real-world MVP**, MeetLens focuses on **clarity, affordability, and practical value**, not flashy demos.
+**Live Demo:** [https://meetlensai.up.railway.app/](https://meetlensai.up.railway.app/)
 
 ---
 
-## 🚀 Why MeetLens?
+## 📺 Product Showcase
 
-Most people:
+### 🎥 Demo Video
 
-* Attend long meetings
-* Forget key decisions
-* Miss action items
-* Waste time re-listening to calls
+[Click here to watch the full walkthrough on YouTube](https://www.google.com/search?q=https://www.youtube.com/watch%3Fv%3DYOUR_VIDEO_ID_HERE)
 
-MeetLens solves this by converting **audio → structured intelligence**.
+*(Add your YouTube link above)*
+
+### 📸 Product Gallery
+
+![Homepage](assets/screenshots/homepage.png)
+![Upload](assets/screenshots/upload.png)
+![Audio player](assets/screenshots/audio-player.png)
+![Results](assets/screenshots/results.png)
+![Export](assets/screenshots/export.png)
 
 ---
 
 ## ✨ Key Features
 
-### 🎙️ Audio-to-Text Transcription
+### 🎙️ Intelligent Transcription & Audio Sync
 
-* Upload recorded meetings or calls
-* Accurate speech-to-text optimized for **Indian English**
-* Handles real-world audio (not studio-perfect files)
+* **Word-Level Highlighting:** A custom sticky audio player that highlights text in real-time as the audio plays.
+* **Optimized for Indian English:** High-accuracy STT engine tuned for real-world business accents and non-studio environments.
 
----
+### 🧠 AI-Powered Insights
 
-### 🧠 AI-Powered Analysis
+* **Five Lenses of Analysis:** Summary, Action Items, Key Decisions, Highlights, and Tone Analysis.
+* **Speaker Mapping:** Automatically identifies different voices and allows users to rename them (e.g., "Speaker 1" → "Manager") for a personalized transcript.
 
-Each meeting is analyzed to generate:
+### 🧪 One-Click Demo (Sample Audios)
 
-* **Concise Summary** – What actually happened
-* **Action Items** – Tasks extracted automatically
-* **Key Decisions** – Clear decision points
-* **Important Highlights** – What truly matters
+* **Pre-loaded Samples:** Includes a dedicated row of sample recordings (Sales Calls, Project Meetings, Support Calls) hosted locally for instant testing.
+* **Auto-Populate:** Clicking a sample bypasses manual file selection, instantly triggering the analysis flow—perfect for quick judge reviews.
 
 ---
 
-### 👥 Speaker-Aware Insights
+## 💰 Business & Revenue Model
 
-* Identifies different speakers
-* Helps understand discussion balance
-
----
-
-### 📤 Share & Export
-
-* Copy/share meeting insights instantly
-* Email-ready summaries
-* Designed for managers, teams, and documentation
-
----
-
-### 🔒 Privacy-First Design
-
-* Audio files are **processed securely**
-* No public sharing by default
-* Built with **privacy-conscious workflows** in mind
-
----
-
-## 💰 Business Model (Clear & Transparent)
+MeetLens adopts a **Utility-First** model to align costs with user value.
 
 ### Pay-As-You-Go Pricing
 
 > **₹5 per minute of audio analyzed**
 
-Why this model?
-
-* Meetings are irregular
-* Users don’t want subscriptions
-* AI costs scale with audio length
-
-What’s included:
-
-* Transcription
-* Summary
-* Action items
-* Key decisions
-
-✅ No subscriptions
-✅ No hidden charges
-✅ Predictable cost
-
----
-
-### 🎁 Free Trial
-
-* New users get **free minutes** to test the product
-* No credit card required
-
----
-
-## 🧪 Early User Validation
-
-MeetLens has been tested with **early users** who attend multiple meetings daily.
-
-> *“If it extracts exact needed info, this would be useful for people who attend many meetings in a day. I’d pay ₹5 per minute.”*
-> — Early User (MVP Testing)
-
-This feedback directly shaped:
-
-* Pricing
-* Feature prioritization
-* Output clarity
+* **Why this works:** Meetings are irregular. Users avoid "Subscription Fatigue" and only pay for what they use.
+* **Predictable Margin:** AI infrastructure costs scale directly with audio length, ensuring a sustainable business model.
+* **No Hidden Fees:** A single flat rate includes transcription plus all AI-generated insights.
 
 ---
 
 ## 🏗️ Tech Stack
 
-* **Frontend:** Svelte / SvelteKit
+* **Frontend:** SvelteKit (Svelte 5 architecture)
 * **Backend:** Node.js
-* **AI Services:**
-
-  * Speech-to-Text (STT)
-  * LLM-based analysis (summaries, actions, decisions)
-* **Deployment:** Vercel (Frontend + APIs)
-
-The architecture is designed to be:
-
-* Modular
-* Scalable
-* Easy to extend for B2B use cases
+* **Deployment:** Railway
+* **State Management:** Custom Svelte Stores for session persistence.
+* **UI/UX:** Bootstrap 5 + Glass-morphic Custom CSS.
+* **Audio Logic:** FilePond for robust file handling and validation.
 
 ---
 
-## ⚙️ Installation & Setup
+## ⚙️ Project Installation & Setup
 
 ### Prerequisites
 
 * Node.js (v18+)
-* API keys for AI services (Speech + LLM)
+* API keys for Transcription and LLM services.
 
 ### Steps
 
-```bash
-git clone https://github.com/your-username/meetlens.git
-cd meetlens
-npm install
-```
-
-Create a `.env` file:
-
-```env
-AI_API_KEY=your_key_here
-```
-
-Run locally:
-
-```bash
-npm run dev
-```
+1. **Clone the repo:**
+`git clone https://github.com/your-username/meetlens.git`
+2. **Install dependencies:**
+`npm install`
+3. **Configure Environment:**
+Create a `.env` file in the root:
+`AI_API_KEY=your_key_here`
+4. **Launch locally:**
+`npm run dev`
 
 ---
 
 ## 🌍 Deployment
 
-MeetLens is deployed on **Vercel** for:
+MeetLens is optimized for deployment on **Railway**.
 
-* Fast global delivery
-* Simple CI/CD
-* Serverless scalability
+* **Build Command:** `npm run build`
+* **Start Command:** `node build`
 
-Live Demo:
-👉 [https://meetlensai.vercel.app](https://meetlensai.vercel.app)
-- Temporary url - Deployment issues
----
-
-## 📈 Future Roadmap
-
-Planned enhancements (post-MVP):
-
-* Live meeting analysis
-* Team dashboards
-* B2B plans for companies
-* Compliance & audit-friendly exports
-* CRM / HR integrations
+*Note: Static assets like sample audios are served directly from the `/static` folder to ensure reliability across deployments.*
 
 ---
 
-## 🧠 Why This Project Matters
+## 🧠 Why MeetLens Matters (The AI Buildathon Vision)
 
-MeetLens is not a toy project.
+MeetLens is not a toy project; it is a **Real-World MVP**. It demonstrates:
 
-It demonstrates:
-
-* Real-world AI integration
-* Cost-aware system design
-* Clear monetization strategy
-* User-first product thinking
-
-This project was built as part of an **AI Buildathon**, focusing on **practical adoption**, not theoretical AI.
+1. **Practical Adoption:** A monetization strategy that handles real AI token costs.
+2. **High-End UI:** A sophisticated dark-mode dashboard designed for professional focus.
+3. **Information Clarity:** Solving "Meeting Fatigue" by providing structured data instead of raw noise.
 
 ---
 
-## 🤝 Contributing
+## 📬 Contact Team AIB au
 
-Contributions, feedback, and suggestions are welcome.
-Feel free to open issues or discussions.
+If you are a judge or recruiter, feel free to explore the code or try the demo!
 
----
-
-## 📬 Contact
-
-If you’re a recruiter, judge, or potential user:
-
-* Try the live demo
-* Review the codebase
-* Share feedback
+[Live App](https://meetlensai.up.railway.app/) | [GitHub Repo](https://www.google.com/search?q=https://github.com/your-username/meetlens)
 
 ---
 
 ### ⭐ If you find this project useful, please give it a star!
 
----
-
-If you want next:
-
-* A **shorter README version for judges**
-* A **“1-minute pitch” section**
-* Or a **screenshots section layout**
-
-Tell me and I’ll tailor it exactly for your submission.
+**Next Step:** Would you like me to help you write a "Technical Challenges" section to explain how you solved the audio-to-transcript highlighting logic for the judges?
