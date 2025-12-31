@@ -59,6 +59,13 @@
         fileName = "";
         localError = "";
     }
+
+  export function setFile(newFile) {
+      if (pond) {
+        // This triggers handleAddFile automatically
+        pond.addFile(newFile);
+      }
+    }
 </script>
 
 <div class="custom-uploader">

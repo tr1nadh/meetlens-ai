@@ -274,6 +274,65 @@
       details = { name: "", meeting_type: "", duration: "", rep_id: "0" };
     }
   }
+
+  import { slide } from 'svelte/transition'; // Add slide for a smooth reveal
+
+    let showSamples = true;
+
+async function handleSampleClick(sample) {
+    try {
+      // 1. Fetch the local file
+      const response = await fetch(sample.url);
+      const blob = await response.blob();
+      
+      const ext = sample.url.split('.').pop();
+      const sampleFile = new File([blob], `${sample.title}.${ext}`, { 
+        type: ext === 'wav' ? 'audio/wav' : 'audio/mpeg' 
+      });
+
+      // 2. Set the meeting type dropdown first
+      meetingType = sample.type;
+
+      // 3. Pass the file to FilePond inside the uploader
+      if (uploaderComponent) {
+        uploaderComponent.setFile(sampleFile);
+      }
+
+      // 4. Hide the samples row
+      showSamples = false; 
+      
+    } catch (error) {
+      console.error("Selection failed:", error);
+    }
+  }
+
+  const sampleAudios = [
+    {
+      id: 'sample1',
+      title: 'Group discussion example',
+      url: '/samples/Group_discussion_example.mp3', 
+      type: 'general'
+    },
+    {
+      id: 'sample2',
+      title: 'Project meeting example',
+      duration: '08:20',
+      url: '/samples/Project_meeting_example.wav',
+      type: 'project_meeting'
+    },
+    {
+      id: 'sample3',
+      title: 'Sales Call example',
+      url: '/samples/Sales_call_example.wav',
+      type: 'sales_call'
+    },
+    {
+      id: 'sample4',
+      title: 'Support call example',
+      url: '/samples/Support_call_example.wav',
+      type: 'support_call'
+    },
+  ];
 </script>
 
 <div class="upload-page-wrapper">
@@ -362,6 +421,34 @@
         {/if}
       </div>
     </div>
+
+<div class="samples-wrapper mb-4">
+  <button 
+    class="btn-toggle-samples" 
+    on:click={() => showSamples = !showSamples}
+  >
+    <span><i class="fa-solid fa-wand-magic-sparkles me-2"></i> Try a Sample Recording</span>
+    <i class="fa-solid fa-chevron-{showSamples ? 'up' : 'down'} small"></i>
+  </button>
+
+  {#if showSamples}
+    <div class="samples-container mt-3" transition:slide={{ duration: 300 }}>
+      <div class="samples-row">
+        {#each sampleAudios as sample}
+          <button class="sample-card glass-card" on:click={() => handleSampleClick(sample)}>
+            <div class="play-icon">
+              <i class="fa-solid fa-play"></i>
+            </div>
+            <div class="sample-details">
+              <span class="title">{sample.title}</span>
+              <span class="type-badge">{sample.type.replace('_', ' ')}</span>
+            </div>
+          </button>
+        {/each}
+      </div>
+    </div>
+  {/if}
+</div>
 
     <div class="row g-4">
       <div class="col-lg-7">
@@ -697,4 +784,102 @@
     -webkit-mask-image: none; 
   }
 }
+
+/* Sample audios css */
+
+  .samples-row {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding: 10px 2px;
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .samples-row::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+
+  .sample-card {
+    flex: 0 0 auto;
+    width: 260px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .sample-card:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.4);
+    transform: translateY(-2px);
+  }
+
+  .play-icon {
+    width: 36px;
+    height: 36px;
+    background: #6366f1;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8rem;
+  }
+
+  .title {
+    display: block;
+    color: #f8fafc;
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 170px;
+  }
+
+  .type-badge {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-toggle-samples {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px 0;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+
+  .btn-toggle-samples:hover {
+    color: #818cf8;
+  }
+
+  .samples-row {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding: 10px 2px;
+    scrollbar-width: none;
+  }
+
+  .samples-row::-webkit-scrollbar {
+    display: none;
+  }
 </style>
