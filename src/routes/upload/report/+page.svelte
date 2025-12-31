@@ -55,7 +55,7 @@
 
       <div class="row no-print">
           <div class="col-12">
-              <ShareReport {summary} {actionItems} />
+              <ShareReport fileDetails={details} {summary} {actionItems} />
           </div>
       </div>
     </header>

@@ -4,6 +4,7 @@
 
   export let summary = ""; 
   export let actionItems = []; 
+  export let fileDetails = {};
   
   let html2canvas;
   let jsPDF;
@@ -143,7 +144,14 @@
           recipient: emailRecipient,
           summary: summary,
           actionItems: cleanActionItems,
-          pdfBase64: pdfBase64
+          pdfBase64: pdfBase64,
+          fileDetails: {
+            name: fileDetails.name || "N/A",
+            duration: fileDetails.duration || "N/A",
+            meeting_type: fileDetails.meeting_type || "General Meeting",
+            rep_id: fileDetails.rep_id || "N/A",
+            generatedAt: new Date().toLocaleString()
+          }
         })
       });
 

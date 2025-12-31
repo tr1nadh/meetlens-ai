@@ -8,7 +8,7 @@ const resend = new Resend(env.RESEND_API_KEY);
 
 export async function POST({ request }) {
   try {
-    const { recipient, summary, actionItems, pdfBase64 } = await request.json();
+    const { recipient, summary, actionItems, pdfBase64, fileDetails } = await request.json();
 
     // --------- BASIC VALIDATION ----------
     if (!recipient || !summary) {
@@ -56,10 +56,22 @@ export async function POST({ request }) {
       `;
     }
 
+    // --------- FORMAT FILE DETAILS ----------
+    const detailsHtml = fileDetails ? `
+      <div style="background-color: #f1f5f9; padding: 15px; border-radius: 12px; margin-bottom: 25px; font-size: 13px; color: #475569;">
+        <p style="margin: 0 0 5px 0;"><strong>Meeting Type:</strong> ${fileDetails.meeting_type || 'General'}</p>
+        <p style="margin: 0 0 5px 0;"><strong>File Name:</strong> ${fileDetails.name || 'N/A'}</p>
+        <p style="margin: 0 0 5px 0;"><strong>Duration:</strong> ${fileDetails.duration || 'N/A'}</p>
+        ${fileDetails.rep_id ? `<p style="margin: 0;"><strong>Report ID:</strong> #${fileDetails.rep_id}</p>` : ''}
+      </div>
+    ` : '';
+
     // --------- EMAIL TEMPLATE ----------
     const emailHtml = `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; padding: 20px; color: #1e293b; background-color: #ffffff; border: 1px solid #f1f5f9; border-radius: 16px;">
         <h1 style="color: #6366f1; text-align: center;">Meeting Insights</h1>
+        
+        ${detailsHtml}
 
         <h3 style="border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; color: #0f172a;">Summary</h3>
         <p style="line-height: 1.6; white-space: pre-wrap; color: #334155;">${summary}</p>
@@ -74,8 +86,11 @@ export async function POST({ request }) {
       </div>
     `;
 
-    const subject = `Meeting Analysis - ${new Date().toLocaleDateString()}`;
-    const filename = `Meeting_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
+    // Dynamic Subject and Filename using the Filename
+    const displayTitle = fileDetails?.name || fileDetails?.meeting_type || 'General Meeting';
+    const subject = `Meeting Analysis: ${displayTitle} (${new Date().toLocaleDateString()})`;
+    const cleanFileName = displayTitle.replace(/\.[^/.]+$/, "").replace(/[^a-z0-9]/gi, '_');
+    const filename = `${cleanFileName}_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
 
     // --------- CONDITIONAL LOGIC: RESEND VS NODEMAILER ----------
     if (env.MAIL_SENDER === 'resend') {
