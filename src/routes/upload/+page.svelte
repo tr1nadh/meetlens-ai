@@ -393,6 +393,18 @@ $: currentWordIndex = duration > 0
     audioUrl = "";
   }
 
+  let activeTab = 'tone';
+
+  function scrollTabs(amount) {
+  const container = document.getElementById('tabs-nav-scroll');
+  if (container) {
+    container.scrollBy({
+      left: amount,
+      behavior: 'smooth'
+    });
+  }
+}
+
 </script>
 
 <div class="upload-page-wrapper">
@@ -509,40 +521,84 @@ $: currentWordIndex = duration > 0
             </div>
         </div>
 
-        <ToneAnalysis 
-          {transcript} 
-          {toneResult} 
-          {toneLoading} 
-          {analyzeTone}
-        />
-        
-        <SummaryAnalysis
-          {transcript}
-          {summary}
-          {summaryLoading}
-          {generateSummary}
-        />
+<div class="tabs-container-wrapper mb-4">
+  <button class="nav-arrow left" on:click={() => scrollTabs(-200)} aria-label="Scroll Left">
+    <i class="fa-solid fa-chevron-left"></i>
+  </button>
 
-        <DecisionAnalysis
-          {transcript}
-          {keyDecisions}
-          {keyDecisionsLoading}
-          {generateKeyDecisions}
-        />
+  <div class="tabs-nav" id="tabs-nav-scroll">
+    <button class="tab-link {activeTab === 'summary' ? 'active' : ''}" on:click={() => activeTab = 'summary'}>
+      <i class="fa-solid fa-align-left me-2"></i>Summary
+    </button>
 
-        <HighlightsAnalysis
-          {transcript}
-          {highlights}
-          {highlightsLoading}
-          {generateHighlights}
-        />
+    <button class="tab-link {activeTab === 'highlights' ? 'active' : ''}" on:click={() => activeTab = 'highlights'}>
+      <i class="fa-solid fa-wand-magic-sparkles me-2"></i>Highlights
+    </button>
 
-        <ActionItemsAnalysis
-          {transcript}
-          {actionItems}
-          {actionItemsLoading}
-          {generateActionItems}
-        />
+    <button class="tab-link {activeTab === 'tone' ? 'active' : ''}" on:click={() => activeTab = 'tone'}>
+      <i class="fa-solid fa-face-smile-beam me-2"></i>Tone Analysis
+    </button>
+
+    <button class="tab-link {activeTab === 'decisions' ? 'active' : ''}" on:click={() => activeTab = 'decisions'}>
+      <i class="fa-solid fa-gavel me-2"></i>Key Decisions
+    </button>
+
+    <button class="tab-link {activeTab === 'action-items' ? 'active' : ''}" on:click={() => activeTab = 'action-items'}>
+      <i class="fa-solid fa-list-check me-2"></i>Action Items
+    </button>
+  </div>
+
+  <button class="nav-arrow right" on:click={() => scrollTabs(200)} aria-label="Scroll Right">
+    <i class="fa-solid fa-chevron-right"></i>
+  </button>
+</div>
+
+        {#if activeTab === 'tone'}
+          <ToneAnalysis 
+            {transcript} 
+            {toneResult} 
+            {toneLoading} 
+            {analyzeTone}
+          />
+        {/if}
+
+        {#if activeTab === 'summary'}
+          <SummaryAnalysis
+            {transcript}
+            {summary}
+            {summaryLoading}
+            {generateSummary}
+          />
+        {/if}
+
+        {#if activeTab === 'highlights'}
+          <HighlightsAnalysis
+            {transcript}
+            {highlights}
+            {highlightsLoading}
+            {generateHighlights}
+          />
+        {/if}
+
+        {#if activeTab === 'decisions'}
+          <DecisionAnalysis
+            {transcript}
+            {keyDecisions}
+            {keyDecisionsLoading}
+            {generateKeyDecisions}
+          />
+        {/if}
+
+        {#if activeTab === 'action-items'}
+          <ActionItemsAnalysis
+            {transcript}
+            {actionItems}
+            {actionItemsLoading}
+            {generateActionItems}
+          />
+        {/if}
+
+
       </div>
     </div>
   </div>
@@ -667,4 +723,107 @@ $: currentWordIndex = duration > 0
   .btn-outline-glass:hover:not(:disabled) { background: rgba(255,255,255,0.1); color: white; }
 
   @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+ /* Container that holds arrows and tabs */
+.tabs-container-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: rgba(14, 17, 29, 0.4);
+  border-radius: 12px;
+  padding: 0 5px;
+  overflow: hidden;
+}
+
+/* The actual scrollable bar */
+.tabs-nav {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  white-space: nowrap;
+  scrollbar-width: none; /* Firefox */
+  padding: 10px 40px; /* Space for arrows */
+  width: 100%;
+  /* Creates a fade effect on left/right edges */
+  mask-image: linear-gradient(to right, transparent, black 50px, black calc(100% - 50px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 50px, black calc(100% - 50px), transparent);
+}
+
+.tabs-nav::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* Navigation Arrows */
+.nav-arrow {
+  position: absolute;
+  z-index: 10;
+  background: #1e1b4b;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #a5b4fc;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 15px rgba(0,0,0,0.5);
+}
+
+.nav-arrow:hover {
+  background: #6366f1;
+  color: white;
+  transform: scale(1.1);
+}
+
+.nav-arrow.left { left: 8px; }
+.nav-arrow.right { right: 8px; }
+
+/* Individual Tab Links */
+.tab-link {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 10px 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.tab-link:hover {
+  color: white;
+}
+
+.tab-link.active {
+  color: #6366f1;
+}
+
+/* Active Underline Glow */
+.tab-link.active::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 20px;
+  right: 20px;
+  height: 3px;
+  background: #6366f1;
+  border-radius: 10px;
+  box-shadow: 0 -2px 10px rgba(99, 102, 241, 0.6);
+}
+
+/* Mobile: Disable arrows and fade for touch swiping */
+@media (max-width: 768px) {
+  .nav-arrow { display: none; }
+  .tabs-nav { 
+    padding: 10px 0; 
+    mask-image: none; 
+    -webkit-mask-image: none; 
+  }
+}
 </style>
