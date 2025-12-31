@@ -420,4 +420,54 @@
     background: rgba(8, 9, 15, 0.85); backdrop-filter: blur(8px); 
     z-index: 9999; display: flex; align-items: center; justify-content: center; 
   }
+
+  /* 1. CLEAN CONTAINER: No dark inner shadows, just a solid dark base */
+  .listening-mode-container {
+    background: #0e111d !important; 
+    border-radius: 20px;
+    padding: 24px;
+    border: 1px solid rgba(129, 140, 248, 0.4) !important;
+  }
+
+  /* 2. FULL VIEWPORT: Removed the black gradient/mask for total clarity */
+  .highlight-viewport {
+    flex-grow: 1;
+    overflow-y: auto;
+    font-size: 1.75rem; 
+    line-height: 1.9;
+    padding: 40px 20px;
+    text-align: center;
+    /* Mask removed for better visibility of all text */
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
+  }
+
+  /* 3. THE ACTIVE WORD: Pure white with a focused indigo underline/glow */
+  .word-active {
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    transform: scale(1.12);
+    text-shadow: 0 0 15px rgba(129, 140, 248, 0.8);
+    /* Adding a subtle border-bottom to track the line better */
+    border-bottom: 2px solid #818cf8;
+    transition: all 0.15s ease-out;
+  }
+
+  /* 4. IDLE WORDS: Increased opacity so they are clearly visible but not distracting */
+  .word-idle { 
+    color: rgba(255, 255, 255, 0.35) !important; 
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+  }
+
+  /* 5. SPEED BUTTON: Higher contrast text */
+  .speed-toggle {
+    background: #1e1b4b !important;
+    border: 1px solid #4338ca !important;
+    color: #ffffff !important;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
 </style>
