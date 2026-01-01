@@ -1,98 +1,13 @@
 import { json } from "@sveltejs/kit";
-import ffmpeg from "fluent-ffmpeg";
-import ffmpegPath from "ffmpeg-static";
-import fs from "fs";
-import path from "path";
-import os from "os";
 import fetch from "node-fetch";
 import FormData from "form-data";
-import { GoogleAuth } from "google-auth-library";
-import {
-  env
-} from "$env/dynamic/private";
-
-if (ffmpegPath) ffmpeg.setFfmpegPath(ffmpegPath);
-
-const REGION = "us-central1";
-const PROJECT_ID = String(env.GCP_PROJECT_ID).trim();
-
-/* ---------------- GEMINI AUTH ---------------- */
-
-const auth = new GoogleAuth({
-  keyFilename: env.GOOGLE_APPLICATION_CREDENTIALS,
-  scopes: ["https://www.googleapis.com/auth/cloud-platform"]
-});
-
-/* ---------------- GEMINI CLEANUP ---------------- */
-
-async function cleanupWithGemini(rawText, meetingType) {
-  if (!rawText || rawText.length < 5) return rawText;
-
-  const meetingContext = meetingType
-    ? `This is a ${meetingType.replace("_", " ")}.`
-    : "";
-
-  try {
-    const client = await auth.getClient();
-    const accessToken = await client.getAccessToken();
-
-    const endpoint = `https://${REGION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${REGION}/publishers/google/models/gemini-1.5-flash-001:generateContent`;
-
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken.token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [
-              {
-                text: `
-Task:
-You are cleaning a transcript.
-${meetingContext}
-
-Rules:
-- Fix punctuation and grammar
-- Keep speaker labels exactly
-- Do NOT summarize
-- Do NOT remove content
-
-Transcript:
-${rawText}
-                `.trim()
-              }
-            ]
-          }
-        ],
-        generationConfig: { temperature: 0.1 }
-      })
-    });
-
-    const data = await res.json();
-    return (
-      data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || rawText
-    );
-  } catch {
-    return rawText;
-  }
-}
-
-/* ---------------- POST: TRANSCRIBE ---------------- */
+import { env } from "$env/dynamic/private";
 
 export async function POST({ request }) {
-  console.log("[LOG] Lemonfox STT pipeline started (speaker labels ON)");
-
-  const ts = Date.now();
-  const inputPath = path.join(os.tmpdir(), `raw-${ts}`);
-  const wavPath = path.join(os.tmpdir(), `clean-${ts}.wav`);
+  console.log("[LOG] Lemonfox STT pipeline started");
 
   try {
     const formData = await request.formData();
-
     const audioFile = formData.get("audio");
     const meetingType = formData.get("meetingType");
 
@@ -100,49 +15,27 @@ export async function POST({ request }) {
       return json({ error: "No audio uploaded" }, { status: 400 });
     }
 
-    if (!meetingType) {
-      return json({ error: "Meeting type not provided" }, { status: 400 });
-    }
-
-    console.log("[LOG] Meeting type:", meetingType);
-
-    fs.writeFileSync(inputPath, Buffer.from(await audioFile.arrayBuffer()));
-
-    await new Promise((resolve, reject) => {
-      ffmpeg(inputPath)
-        .toFormat("wav")
-        .audioChannels(1)
-        .audioFrequency(16000)
-        .audioCodec("pcm_s16le")
-        .on("end", resolve)
-        .on("error", reject)
-        .save(wavPath);
-    });
+    // Convert the File/Blob to a Buffer for the API request
+    const buffer = Buffer.from(await audioFile.arrayBuffer());
 
     const lfForm = new FormData();
-
-    lfForm.append("file", fs.createReadStream(wavPath), {
-      filename: "audio.wav",
-      contentType: "audio/wav"
+    lfForm.append("file", buffer, {
+      filename: audioFile.name || "audio.mp3",
+      contentType: audioFile.type || "audio/mpeg"
     });
 
     lfForm.append("response_format", "verbose_json");
     lfForm.append("language", "en");
     lfForm.append("speaker_labels", "true");
-    lfForm.append("min_speakers", "2");
-    lfForm.append("max_speakers", "4");
 
-    const lfRes = await fetch(
-      "https://api.lemonfox.ai/v1/audio/transcriptions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${env.LEMONFOX_API_KEY}`,
-          ...lfForm.getHeaders()
-        },
-        body: lfForm
-      }
-    );
+    const lfRes = await fetch("https://api.lemonfox.ai/v1/audio/transcriptions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.LEMONFOX_API_KEY}`,
+        ...lfForm.getHeaders()
+      },
+      body: lfForm
+    });
 
     if (!lfRes.ok) {
       const errText = await lfRes.text();
@@ -150,47 +43,31 @@ export async function POST({ request }) {
     }
 
     const lfData = await lfRes.json();
+    let transcript = "";
 
-    let rawText = "";
-
+    // Process segments to include speaker labels
     if (Array.isArray(lfData?.segments)) {
-      rawText = lfData.segments
+      transcript = lfData.segments
         .map(s => {
-          const speaker =
-            s.speaker != null ? `Speaker ${s.speaker}` : "Speaker";
+          const speaker = s.speaker != null ? `Speaker ${s.speaker}` : "Speaker";
           return `${speaker}: ${s.text}`;
         })
         .join("\n");
-    } else if (lfData?.text) {
-      rawText = lfData.text;
+    } else {
+      transcript = lfData.text || "";
     }
 
-    console.log("[LOG] STT completed. Length:", rawText.length);
-
-    if (!rawText) {
-      return json({
-        completed: true,
-        text: "No speech detected.",
-        rawText,
-        meetingType
-      });
-    }
-
-    const cleanText = await cleanupWithGemini(rawText, meetingType);
+    console.log("[LOG] STT completed. Length:", transcript.length);
 
     return json({
       completed: true,
-      text: cleanText,
-      rawText,
-      meetingType
+      text: transcript || "No speech detected.",
+      rawText: transcript,
+      meetingType: meetingType || "General"
     });
 
   } catch (err) {
-    console.error("[ERROR] Lemonfox pipeline:", err);
+    console.error("[ERROR] Transcription pipeline:", err);
     return json({ error: err.message }, { status: 500 });
-
-  } finally {
-    if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
-    if (fs.existsSync(wavPath)) fs.unlinkSync(wavPath);
   }
 }

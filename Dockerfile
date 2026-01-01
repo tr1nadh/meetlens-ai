@@ -11,7 +11,6 @@ COPY . .
 
 # --- EMERGENCY FIX: Dummy variables for build-time ---
 ENV VERTEX_API_KEY="dummy"
-ENV GOOGLE_APPLICATION_CREDENTIALS="dummy"
 ENV GCP_PROJECT_ID="dummy"
 ENV LEMONFOX_API_KEY="dummy"
 ENV GMAIL_ADDRESS="dummy"
