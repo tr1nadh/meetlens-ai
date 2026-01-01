@@ -12,9 +12,7 @@ MeetLens is a high-performance **AI-powered meeting & call analysis tool** built
 
 ### 🎥 Demo Video
 
-[Click here to watch the full walkthrough on YouTube](https://www.google.com/search?q=https://www.youtube.com/watch%3Fv%3DYOUR_VIDEO_ID_HERE)
-
-*(Add your YouTube link above)*
+[Click here to watch the full walkthrough on YouTube](https://youtu.be/KxYnSjmgb1g)
 
 ### 📸 Product Gallery
 
